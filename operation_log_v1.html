@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPERATION LOG</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f4f6f9;
+    --surface2: #e8ecf2;
+    --accent: #0a8f6a;
+    --accent2: #0077cc;
+    --warn: #d48000;
+    --text: #1a2535;
+    --text2: #5a6a80;
+    --border: #c8d0dc;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .header {
+    text-align: center;
+    padding: 20px 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; font-family: 'Share Tech Mono', monospace; }
+  .header p { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+  .card-label { font-size: 11px; font-weight: 700; color: var(--text2); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; }
+
+  /* 種別 */
+  .btn-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .btn-cat {
+    background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+    color: var(--text2); font-family: 'Share Tech Mono', monospace; font-size: 20px; font-weight: 900;
+    padding: 14px 4px; cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .btn-cat:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-cat.active { background: var(--accent); border-color: var(--accent); color: #0f1923; }
+  .btn-cat .cat-sub { display: block; font-size: 9px; font-family: 'Noto Sans JP', sans-serif; margin-top: 3px; opacity: 0.8; }
+
+  /* コールサイン */
+  .suggest-wrap { position: relative; }
+  input.callsign-input {
+    width: 100%;
+    background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'Share Tech Mono', monospace;
+    font-size: 22px; font-weight: 700; padding: 14px 16px;
+    letter-spacing: 0.08em; outline: none; transition: border-color 0.15s;
+  }
+  input.callsign-input::placeholder { color: var(--text2); opacity: 0.4; font-size: 15px; font-family: 'Noto Sans JP', sans-serif; }
+  input.callsign-input:focus { border-color: var(--accent2); }
+
+  .suggest-list {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--surface2); border: 1px solid var(--accent2); border-radius: 10px;
+    z-index: 50; max-height: 200px; overflow-y: auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  .suggest-list.show { display: block; }
+  .suggest-item {
+    padding: 12px 16px; cursor: pointer;
+    border-bottom: 1px solid var(--border); transition: background 0.1s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .suggest-item:last-child { border-bottom: none; }
+  .suggest-item:hover { background: var(--border); }
+  .suggest-cs { font-family: 'Share Tech Mono', monospace; font-size: 16px; color: var(--text); }
+  .suggest-cs .hi { color: var(--accent2); }
+  .suggest-meta { font-size: 11px; color: var(--text2); }
+
+  /* RST */
+  .rst-row { display: flex; flex-direction: column; gap: 14px; }
+  .rst-row-inner { display: flex; align-items: center; gap: 10px; }
+  .rst-side-label { font-size: 13px; font-weight: 700; color: var(--text2); white-space: nowrap; min-width: 28px; }
+  .btn-rst-group { display: grid; gap: 5px; width: 100%; }
+  .btn-rst {
+    background: var(--surface2); border: 2px solid var(--border); border-radius: 8px;
+    color: var(--text2); font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 900;
+    padding: 12px 2px; cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .btn-rst:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-rst.active { background: var(--accent2); border-color: var(--accent2); color: #0f1923; }
+
+  /* QTH */
+  .qth-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .qth-label-sm { font-size: 11px; color: var(--text2); white-space: nowrap; min-width: 56px; font-weight: 700; }
+  select.qth-select {
+    flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 14px; padding: 10px; outline: none;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238aa0b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; transition: border-color 0.15s;
+  }
+  select.qth-select:focus { border-color: var(--accent2); }
+  input.qth-text {
+    flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 14px; padding: 10px 12px; outline: none; transition: border-color 0.15s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  input.qth-text::placeholder { color: var(--text2); opacity: 0.5; }
+  input.qth-text:focus { border-color: var(--accent2); }
+
+  /* 送信ボタン */
+  .btn-submit {
+    width: 100%; background: var(--accent); border: none; border-radius: var(--radius);
+    color: #0f1923; font-size: 18px; font-weight: 700; padding: 18px; cursor: pointer;
+    letter-spacing: 0.1em; transition: all 0.15s; margin-top: 6px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-submit:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-submit:active { transform: translateY(0); }
+
+  /* フラッシュ */
+  .flash {
+    display: none; position: fixed; top: 0; left: 0; right: 0;
+    background: var(--accent); color: #0f1923; text-align: center;
+    padding: 14px; font-weight: 700; font-size: 16px; letter-spacing: 0.08em;
+    z-index: 100; animation: slideDown 0.2s ease;
+  }
+  @keyframes slideDown { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+  .flash.show { display: block; }
+
+  /* オフライン */
+  .offline-badge {
+    display: none; align-items: center; gap: 8px;
+    background: rgba(255,183,0,0.12); border: 1px solid var(--warn);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: var(--warn);
+  }
+  .offline-badge.show { display: flex; }
+  .offline-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex-shrink: 0; animation: blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* カウンター */
+  .counter { text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text2); margin-top: 10px; }
+  .counter span { color: var(--accent); font-size: 16px; font-weight: 700; }
+
+  /* タブ */
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
+  .tab { padding: 12px; text-align: center; font-size: 14px; font-weight: 700; cursor: pointer; color: var(--text2); border: none; background: none; transition: all 0.15s; }
+  .tab.active { background: var(--surface2); color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* 自局QTH */
+  .myqth-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .myqth-bar:hover { border-color: var(--accent2); }
+  .myqth-bar .label { font-size: 10px; font-weight: 700; color: var(--text2); letter-spacing: 0.1em; margin-bottom: 2px; }
+  .myqth-bar .value { font-size: 14px; font-weight: 700; color: var(--text); }
+  .myqth-bar .value.empty { color: var(--accent2); font-size: 13px; }
+  .myqth-bar .edit-btn { font-size: 12px; color: var(--accent2); white-space: nowrap; padding: 4px 10px; border: 1px solid var(--accent2); border-radius: 6px; background: none; cursor: pointer; }
+
+  /* 自局QTH編集モーダル */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 200;
+    align-items: center; justify-content: center;
+    min-height: 100vh;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; width: calc(100% - 32px); max-width: 420px;
+  }
+  .modal h2 { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+  .modal-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .modal-label { font-size: 11px; color: var(--text2); white-space: nowrap; min-width: 56px; font-weight: 700; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-modal-ok {
+    flex: 1; background: var(--accent2); border: none; border-radius: 8px;
+    color: #fff; font-size: 15px; font-weight: 700; padding: 12px; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-modal-cancel {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text2); font-size: 15px; font-weight: 700; padding: 12px; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .pending-list { max-height: 200px; overflow-y: auto; }
+  .pending-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; font-family: 'Share Tech Mono', monospace; }
+  .pending-item:last-child { border-bottom: none; }
+  .pending-item .meta { color: var(--text2); font-size: 11px; }
+  .btn-send-all {
+    width: 100%; background: var(--warn); border: none; border-radius: var(--radius);
+    color: #0f1923; font-size: 16px; font-weight: 700; padding: 14px; cursor: pointer;
+    margin-top: 10px; transition: all 0.15s; font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-send-all:hover { filter: brightness(1.1); }
+  .empty-msg { text-align: center; color: var(--text2); font-size: 13px; padding: 16px 0; }
+</style>
+</head>
+<body>
+
+<div class="flash" id="flash">✓ 記録しました</div>
+
+<div class="header">
+  <h1>OPERATION LOG</h1>
+  <p id="header-date"></p>
+</div>
+
+<!-- 自局QTHバー -->
+<div class="myqth-bar" onclick="openMyQTH()">
+  <div>
+    <div class="label">自局 QTH（運用地）</div>
+    <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
+  </div>
+  <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
+</div>
+
+<!-- 自局QTH編集モーダル -->
+<div class="modal-overlay" id="myqth-modal">
+  <div class="modal">
+    <h2>自局の運用地を設定</h2>
+    <div class="modal-row">
+      <div class="modal-label">都道府県</div>
+      <select class="qth-select" id="my-pref"></select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">市区町村</div>
+      <input class="qth-text" id="my-city" type="text" placeholder="例：京都市" autocomplete="off"/>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">詳細(任意)</div>
+      <input class="qth-text" id="my-detail" type="text" placeholder="例：大文字山" autocomplete="off"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeMyQTH()">キャンセル</button>
+      <button class="btn-modal-ok" onclick="saveMyQTH()">設定する</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('input',this)">入力</button>
+  <button class="tab" onclick="switchTab('pending',this)">未送信 <span id="badge"></span></button>
+</div>
+
+<!-- 入力タブ -->
+<div class="tab-pane active" id="tab-input">
+
+  <div class="offline-badge" id="offline-badge">
+    <div class="dot"></div>
+    <span>オフライン中 — データはブラウザに保存されます</span>
+  </div>
+
+  <!-- 種別 -->
+  <div class="card">
+    <div class="card-label">種別</div>
+    <div class="btn-group">
+      <button class="btn-cat" data-cat="DCR"  onclick="selectCat(this)">DCR<span class="cat-sub">デジタル簡易</span></button>
+      <button class="btn-cat" data-cat="LCR"  onclick="selectCat(this)">LCR<span class="cat-sub">ライセンスフリー</span></button>
+      <button class="btn-cat" data-cat="特小" onclick="selectCat(this)">特小<span class="cat-sub">特定小電力</span></button>
+      <button class="btn-cat" data-cat="CB"   onclick="selectCat(this)">CB<span class="cat-sub">市民ラジオ</span></button>
+    </div>
+  </div>
+
+  <!-- コールサイン -->
+  <div class="card">
+    <div class="card-label">コールサイン</div>
+    <div class="suggest-wrap">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input class="callsign-input" id="callsign" type="text"
+          placeholder="きょうとAB123"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          style="flex:1;"
+          oninput="onCallsignInput()"
+          onfocus="onCallsignInput()" />
+        <span style="font-size:22px;font-weight:700;color:var(--text2);flex-shrink:0;">/</span>
+        <input class="callsign-input" id="portable" type="tel"
+          placeholder="−"
+          maxlength="1"
+          autocomplete="off"
+          style="width:56px;text-align:center;flex-shrink:0;"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,1)" />
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px;">
+        <span style="font-size:10px;color:var(--text2);">コールサイン（空欄可）</span>
+        <span style="font-size:10px;color:var(--text2);">ポータブル（不要なら空欄）</span>
+      </div>
+      <div class="suggest-list" id="suggest-list"></div>
+    </div>
+  </div>
+
+  <!-- RST -->
+  <div class="card">
+    <div class="card-label">レポート</div>
+    <div class="rst-row">
+      <div class="rst-row-inner">
+        <div class="rst-side-label">送信</div>
+        <div class="btn-rst-group" id="rst-tx" style="grid-template-columns:repeat(6,1fr);flex:1;">
+          <button class="btn-rst" data-val="59" onclick="selectRst('tx',this)">59</button>
+          <button class="btn-rst" data-val="57" onclick="selectRst('tx',this)">57</button>
+          <button class="btn-rst" data-val="55" onclick="selectRst('tx',this)">55</button>
+          <button class="btn-rst" data-val="53" onclick="selectRst('tx',this)">53</button>
+          <button class="btn-rst" data-val="51" onclick="selectRst('tx',this)">51</button>
+          <button class="btn-rst" data-val="M5" onclick="selectRst('tx',this)">M5</button>
+        </div>
+      </div>
+      <div class="rst-row-inner">
+        <div class="rst-side-label">受信</div>
+        <div class="btn-rst-group" id="rst-rx" style="grid-template-columns:repeat(6,1fr);flex:1;">
+          <button class="btn-rst" data-val="59" onclick="selectRst('rx',this)">59</button>
+          <button class="btn-rst" data-val="57" onclick="selectRst('rx',this)">57</button>
+          <button class="btn-rst" data-val="55" onclick="selectRst('rx',this)">55</button>
+          <button class="btn-rst" data-val="53" onclick="selectRst('rx',this)">53</button>
+          <button class="btn-rst" data-val="51" onclick="selectRst('rx',this)">51</button>
+          <button class="btn-rst" data-val="M5" onclick="selectRst('rx',this)">M5</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QTH -->
+  <div class="card">
+    <div class="card-label">QTH</div>
+    <div class="qth-row">
+      <div class="qth-label-sm">都道府県</div>
+      <select class="qth-select" id="qth-pref"></select>
+    </div>
+    <div class="qth-row">
+      <div class="qth-label-sm">市区町村</div>
+      <input class="qth-text" id="qth-city" type="text" placeholder="例：京都市" autocomplete="off"/>
+    </div>
+    <div class="qth-row">
+      <div class="qth-label-sm">詳細(任意)</div>
+      <input class="qth-text" id="qth-detail" type="text" placeholder="例：大文字山" autocomplete="off"/>
+    </div>
+  </div>
+
+  <button class="btn-submit" onclick="submitLog()">記録する</button>
+  <div class="counter">本日の記録：<span id="count">0</span> 局</div>
+</div>
+
+<!-- 未送信タブ -->
+<div class="tab-pane" id="tab-pending">
+  <div class="card">
+    <div class="card-label">ブラウザ保存中のデータ</div>
+    <div class="pending-list" id="pending-list"></div>
+  </div>
+  <button class="btn-send-all" id="btn-send-all" onclick="sendAll()" style="display:none;">
+    ▲ まとめてクラウドに送信
+  </button>
+</div>
+
+<script>
+// ===== ローマ字→ひらがな変換テーブル =====
+const ROMAJI_MAP = [
+  // 3文字
+  ['shi','し'],['chi','ち'],['tsu','つ'],['thi','ち'],['tsi','つ'],
+  ['dzi','ぢ'],['dzu','づ'],['shu','しゅ'],['sha','しゃ'],['sho','しょ'],
+  ['chu','ちゅ'],['cha','ちゃ'],['cho','ちょ'],['kya','きゃ'],['kyu','きゅ'],
+  ['kyo','きょ'],['nya','にゃ'],['nyu','にゅ'],['nyo','にょ'],['hya','ひゃ'],
+  ['hyu','ひゅ'],['hyo','ひょ'],['mya','みゃ'],['myu','みゅ'],['myo','みょ'],
+  ['rya','りゃ'],['ryu','りゅ'],['ryo','りょ'],['gya','ぎゃ'],['gyu','ぎゅ'],
+  ['gyo','ぎょ'],['bya','びゃ'],['byu','びゅ'],['byo','びょ'],['pya','ぴゃ'],
+  ['pyu','ぴゅ'],['pyo','ぴょ'],['tya','ちゃ'],['tyu','ちゅ'],['tyo','ちょ'],
+  // 2文字
+  ['ka','か'],['ki','き'],['ku','く'],['ke','け'],['ko','こ'],
+  ['sa','さ'],['si','し'],['su','す'],['se','せ'],['so','そ'],
+  ['ta','た'],['ti','ち'],['tu','つ'],['te','て'],['to','と'],
+  ['na','な'],['ni','に'],['nu','ぬ'],['ne','ね'],['no','の'],
+  ['ha','は'],['hi','ひ'],['hu','ふ'],['he','へ'],['ho','ほ'],
+  ['ma','ま'],['mi','み'],['mu','む'],['me','め'],['mo','も'],
+  ['ya','や'],['yu','ゆ'],['yo','よ'],
+  ['ra','ら'],['ri','り'],['ru','る'],['re','れ'],['ro','ろ'],
+  ['wa','わ'],['wi','ゐ'],['we','ゑ'],['wo','を'],
+  ['ga','が'],['gi','ぎ'],['gu','ぐ'],['ge','げ'],['go','ご'],
+  ['za','ざ'],['zi','じ'],['zu','ず'],['ze','ぜ'],['zo','ぞ'],
+  ['da','だ'],['di','ぢ'],['du','づ'],['de','で'],['do','ど'],
+  ['ba','ば'],['bi','び'],['bu','ぶ'],['be','べ'],['bo','ぼ'],
+  ['pa','ぱ'],['pi','ぴ'],['pu','ぷ'],['pe','ぺ'],['po','ぽ'],
+  ['fa','ふぁ'],['fu','ふ'],
+  ['ja','じゃ'],['ji','じ'],['ju','じゅ'],['je','じぇ'],['jo','じょ'],
+  // 1文字
+  ['a','あ'],['i','い'],['u','う'],['e','え'],['o','お'],
+  ['n','ん'],
+];
+
+// ===== 正規化：何が入力されても「ひらがな」に統一 =====
+function normalize(str) {
+  if (!str) return '';
+  let s = str.toLowerCase();
+
+  // カタカナ→ひらがな
+  s = s.replace(/[\u30A1-\u30F6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+
+  // ローマ字→ひらがな（長い順にマッチ）
+  let result = '';
+  let i = 0;
+  while (i < s.length) {
+    let matched = false;
+    for (const [rom, hira] of ROMAJI_MAP) {
+      if (s.startsWith(rom, i)) {
+        result += hira;
+        i += rom.length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      // ひらがなはそのまま、その他（英数字など）はそのまま
+      result += s[i];
+      i++;
+    }
+  }
+  return result;
+}
+
+// 全角英数字→半角に変換
+function toHankaku(str) {
+  return str
+    .replace(/[Ａ-Ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[ａ-ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+}
+
+// コールサインの地域部分だけ正規化（英字・数字は触らない）
+function normalizeCallsign(cs) {
+  // まず全角英数→半角に統一
+  const han = toHankaku(cs);
+  // 末尾の英字2文字+数字3桁を分離して地域部分だけひらがな正規化
+  const m = han.match(/^(.*?)([A-Za-z]{1,2})(\d{1,3})$/);
+  if (m) {
+    return normalize(m[1]) + m[2].toUpperCase() + m[3];
+  }
+  // 分離できない場合は全体を正規化（途中入力中）
+  return normalize(han);
+}
+
+// ===== ストレージ =====
+function getLogs() { return JSON.parse(localStorage.getItem('rc_logs') || '[]'); }
+function saveLogs(logs) { localStorage.setItem('rc_logs', JSON.stringify(logs)); }
+
+// コールサイン履歴（使用頻度順）
+function getHistory() {
+  const map = {};
+  getLogs().forEach(l => {
+    const key = l.cs;
+    if (!map[key]) map[key] = { cs: l.cs, csNorm: l.csNorm || l.cs, cat: l.cat, pref: l.pref, city: l.city, detail: l.detail, count: 0 };
+    map[key].count++;
+    map[key].cat = l.cat;
+    map[key].pref = l.pref;
+    map[key].city = l.city;
+    map[key].detail = l.detail || '';
+  });
+  return Object.values(map).sort((a, b) => b.count - a.count);
+}
+
+// ===== 都道府県リスト（一元管理）=====
+const PREFS = [
+  '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
+  '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
+  '新潟県','富山県','石川県','福井県','山梨県','長野県',
+  '岐阜県','静岡県','愛知県','三重県',
+  '滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県',
+  '鳥取県','島根県','岡山県','広島県','山口県',
+  '徳島県','香川県','愛媛県','高知県',
+  '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県',
+  '台湾'
+];
+
+function buildPrefOptions(selectId, selectedVal) {
+  const el = document.getElementById(selectId);
+  el.innerHTML = '<option value="">選択してください</option>'
+    + PREFS.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+}
+function getMyQTH() { return JSON.parse(localStorage.getItem('my_qth') || 'null'); }
+function saveMyQTH() {
+  const pref   = document.getElementById('my-pref').value;
+  const city   = document.getElementById('my-city').value.trim();
+  const detail = document.getElementById('my-detail').value.trim();
+  if (!pref || !city) { alert('都道府県と市区町村を入力してください'); return; }
+  const qth = { pref, city, detail };
+  localStorage.setItem('my_qth', JSON.stringify(qth));
+  closeMyQTH();
+  renderMyQTH();
+}
+function openMyQTH() {
+  const qth = getMyQTH();
+  buildPrefOptions('my-pref', qth ? qth.pref : '');
+  if (qth) {
+    document.getElementById('my-city').value = qth.city;
+    document.getElementById('my-detail').value = qth.detail || '';
+  }
+  document.getElementById('myqth-modal').classList.add('show');
+}
+function closeMyQTH() {
+  document.getElementById('myqth-modal').classList.remove('show');
+}
+function renderMyQTH() {
+  const qth = getMyQTH();
+  const el = document.getElementById('myqth-display');
+  if (!qth) {
+    el.innerHTML = '<span class="empty">タップして運用地を設定</span>';
+  } else {
+    const parts = [qth.pref, qth.city, qth.detail].filter(Boolean).join(' ');
+    el.innerHTML = `<span>${parts}</span>`;
+  }
+}
+
+// ===== 状態 =====
+const state = { cat: '', rstRx: '', rstTx: '' };
+
+// ===== 初期化 =====
+function init() {
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('header-date').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+  renderMyQTH();
+  buildPrefOptions('qth-pref', '');
+  buildPrefOptions('my-pref', '');
+  // 未設定なら自動でモーダルを開く
+  if (!getMyQTH()) setTimeout(openMyQTH, 400);
+  updateCounter();
+  checkOnline();
+}
+
+function updateCounter() {
+  const today = new Date().toLocaleDateString('ja-JP');
+  const todayCount = getLogs().filter(l => new Date(l.ts).toLocaleDateString('ja-JP') === today).length;
+  document.getElementById('count').textContent = todayCount;
+  const pending = getLogs().filter(l => !l.sent).length;
+  const badge = document.getElementById('badge');
+  badge.textContent = pending > 0 ? `(${pending})` : '';
+  badge.style.color = pending > 0 ? 'var(--warn)' : '';
+}
+
+// ===== コールサイン入力・サジェスト =====
+function onCallsignInput() {
+  const raw = document.getElementById('callsign').value.trim();
+  const list = document.getElementById('suggest-list');
+
+  if (!raw) { list.classList.remove('show'); return; }
+
+  const normInput = normalizeCallsign(raw);
+  const history = getHistory();
+
+  const filtered = history.filter(h => {
+    const normH = h.csNorm || h.cs;
+    return normH.startsWith(normInput) || h.cs.toLowerCase().startsWith(raw.toLowerCase());
+  }).slice(0, 7);
+
+  if (filtered.length === 0) { list.classList.remove('show'); return; }
+
+  // candidatesをウィンドウ変数に保存してインデックスで参照
+  window._suggestCandidates = filtered;
+  list.innerHTML = filtered.map((h, idx) => {
+    const cs = h.cs;
+    const matchLen = Math.min(raw.length, cs.length);
+    const hi = `<span class="hi">${cs.slice(0, matchLen)}</span>${cs.slice(matchLen)}`;
+    return `<div class="suggest-item" onclick="applySuggest(${idx})">
+      <span class="suggest-cs">${hi}</span>
+      <span class="suggest-meta">${h.cat} / ${h.count}回 / ${h.pref}${h.city}</span>
+    </div>`;
+  }).join('');
+  list.classList.add('show');
+}
+
+function applySuggest(idx) {
+  const h = window._suggestCandidates[idx];
+  if (!h) return;
+  document.getElementById('callsign').value = h.cs;
+  document.getElementById('suggest-list').classList.remove('show');
+  // 種別・QTHも自動セット
+  const catBtn = document.querySelector(`.btn-cat[data-cat="${h.cat}"]`);
+  if (catBtn) selectCat(catBtn);
+  if (h.pref) document.getElementById('qth-pref').value = h.pref;
+  if (h.city) document.getElementById('qth-city').value = h.city;
+  if (h.detail) document.getElementById('qth-detail').value = h.detail || '';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.suggest-wrap')) {
+    document.getElementById('suggest-list').classList.remove('show');
+  }
+});
+
+// ===== 選択 =====
+function selectCat(btn) {
+  document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.cat = btn.dataset.cat;
+}
+
+function selectRst(type, btn) {
+  const id = type === 'rx' ? 'rst-rx' : 'rst-tx';
+  document.querySelectorAll(`#${id} .btn-rst`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (type === 'rx') state.rstRx = btn.dataset.val;
+  else state.rstTx = btn.dataset.val;
+}
+
+// ===== 記録する =====
+function submitLog() {
+  const csRaw  = document.getElementById('callsign').value.trim();
+  const cs     = normalizeCallsign(csRaw); // 保存前に正規化（全角→半角・ひらがな統一）
+  const portable = document.getElementById('portable').value.trim();
+  const csDisplay = portable ? `${cs}/${portable}` : cs;
+  const pref  = document.getElementById('qth-pref').value;
+  const city  = document.getElementById('qth-city').value.trim();
+  const detail = document.getElementById('qth-detail').value.trim();
+
+  if (!state.cat)               { alert('種別を選択してください'); return; }
+  if (!cs)                      { alert('コールサインを入力してください'); return; }
+  if (!state.rstRx || !state.rstTx) { alert('レポートを選択してください'); return; }
+  if (!pref)                    { alert('都道府県を選択してください'); return; }
+  if (!city)                    { alert('市区町村を入力してください'); return; }
+
+  const myQTH = getMyQTH();
+  const log = {
+    id: Date.now(),
+    ts: new Date().toISOString(),
+    cat: state.cat,
+    cs: csDisplay,
+    csBase: cs,
+    csNorm: normalizeCallsign(cs),
+    portable: portable,
+    rstRx: state.rstRx,
+    rstTx: state.rstTx,
+    pref, city, detail,
+    myPref:   myQTH ? myQTH.pref   : '',
+    myCity:   myQTH ? myQTH.city   : '',
+    myDetail: myQTH ? myQTH.detail : '',
+    sent: false
+  };
+
+  const logs = getLogs();
+  logs.push(log);
+  saveLogs(logs);
+
+  // フラッシュ
+  const flash = document.getElementById('flash');
+  flash.textContent = `✓  ${csDisplay}  を記録しました`;
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 2000);
+
+  // リセット（種別は保持）
+  document.getElementById('callsign').value = '';
+  document.getElementById('portable').value = '';
+  document.getElementById('qth-pref').value = '';
+  document.getElementById('qth-city').value = '';
+  document.getElementById('qth-detail').value = '';
+  document.querySelectorAll('.btn-rst').forEach(b => b.classList.remove('active'));
+  state.rstRx = '';
+  state.rstTx = '';
+
+  updateCounter();
+  document.getElementById('callsign').focus();
+}
+
+// ===== タブ =====
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'pending') renderPending();
+}
+
+// ===== 未送信 =====
+function renderPending() {
+  const pending = getLogs().filter(l => !l.sent);
+  const list = document.getElementById('pending-list');
+  const btn  = document.getElementById('btn-send-all');
+  if (pending.length === 0) {
+    list.innerHTML = '<div class="empty-msg">未送信のデータはありません</div>';
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'block';
+  list.innerHTML = pending.map(l => {
+    const d = new Date(l.ts);
+    const time = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+    return `<div class="pending-item">
+      <div>
+        <span style="color:var(--accent2);font-weight:700;">${l.cs}</span>
+        <span style="color:var(--text2);font-size:11px;margin-left:6px;">[${l.cat}] ${l.rstRx}/${l.rstTx}</span>
+        <div class="meta">${qth}</div>
+      </div>
+      <div style="color:var(--text2);font-size:11px;">${time}</div>
+    </div>`;
+  }).join('');
+}
+
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzzfDl0LT-817BO-FhWqVaL6lPrF6jQpZNUVlmarqM2CqpQSvtBpLApgVn8MxwIJlEDgg/exec';
+
+async function sendAll() {
+  const logs = getLogs();
+  const pending = logs.filter(l => !l.sent);
+  if (pending.length === 0) return;
+
+  const btn = document.getElementById('btn-send-all');
+  btn.textContent = '送信中...';
+  btn.disabled = true;
+
+  let successCount = 0;
+  const updatedLogs = [...logs];
+
+  for (const log of pending) {
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(log),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const json = await res.json();
+      if (json.result === 'ok') {
+        const idx = updatedLogs.findIndex(l => l.id === log.id);
+        if (idx !== -1) updatedLogs[idx] = { ...updatedLogs[idx], sent: true };
+        successCount++;
+      }
+    } catch(e) {
+      console.error('送信失敗:', e);
+    }
+  }
+
+  saveLogs(updatedLogs);
+  btn.textContent = '▲ まとめてクラウドに送信';
+  btn.disabled = false;
+
+  if (successCount === pending.length) {
+    alert(`✓ ${successCount}件をスプレッドシートに記録しました`);
+  } else {
+    alert(`${successCount}件成功 / ${pending.length - successCount}件失敗\n失敗分は次回再送されます`);
+  }
+
+  renderPending();
+  updateCounter();
+}
+
+function checkOnline() {
+  document.getElementById('offline-badge').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', checkOnline);
+window.addEventListener('offline', checkOnline);
+
+init();
+</script>
+</body>
+</html>
