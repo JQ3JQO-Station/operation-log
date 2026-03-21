@@ -1,0 +1,21 @@
+{
+  "name": "Operation Log",
+  "short_name": "OPLog",
+  "description": "フリーライセンス無線 運用ログ",
+  "start_url": "/operation-log/operation_log_v1.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0077cc",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/0077cc/ffffff?text=OL",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/0077cc/ffffff?text=OL",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
