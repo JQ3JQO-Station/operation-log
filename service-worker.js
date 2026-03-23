@@ -1,6 +1,6 @@
-const CACHE_NAME = 'operation-log-v2';
+const CACHE_NAME = 'operation-log-v3';
 const FILES_TO_CACHE = [
-  '/operation-log/operation_log_v1.html',
+  '/operation-log/operation_log_v2.html',
   '/operation-log/manifest.json'
 ];
 

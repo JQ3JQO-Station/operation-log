@@ -2,7 +2,7 @@
   "name": "Operation Log",
   "short_name": "OPLog",
   "description": "フリーライセンス無線 運用ログ",
-  "start_url": "/operation-log/operation_log_v1.html",
+  "start_url": "/operation-log/operation_log_v2.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0077cc",
