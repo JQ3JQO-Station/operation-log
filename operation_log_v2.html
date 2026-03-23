@@ -103,6 +103,7 @@
     font-family: 'Noto Sans JP', sans-serif;
   }
   .btn-submit:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-submit:disabled { background: var(--border); color: var(--text2); cursor: not-allowed; transform: none; opacity: 1; }
 
   .flash {
     display: none; position: fixed; top: 0; left: 0; right: 0;
@@ -241,6 +242,12 @@
       <button class="btn-cat" data-mode="単信" onclick="selectTokushoMode(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:400;">単信</button>
       <button class="btn-cat" data-mode="レピーター" onclick="selectTokushoMode(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:400;">レピーター</button>
     </div>
+    <div id="repeater-name-row" style="display:none;margin-top:12px;">
+      <input class="qth-text" id="repeater-name" type="text"
+        placeholder="レピーター名（任意）"
+        autocomplete="off"
+        style="width:100%;font-size:18px;padding:14px;"/>
+    </div>
   </div>
 
   <!-- DCR：出力（DCR選択時のみ表示） -->
@@ -249,6 +256,19 @@
     <div class="btn-group" style="grid-template-columns:repeat(2,1fr);">
       <button class="btn-cat" data-power="5W" onclick="selectDcrPower(this)" style="font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;">5W</button>
       <button class="btn-cat" data-power="1W" onclick="selectDcrPower(this)" style="font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;">1W</button>
+    </div>
+  </div>
+
+  <!-- LCR：距離（LCR選択時のみ表示） -->
+  <div class="card" id="lcr-distance-card" style="display:none;">
+    <div class="card-label">距離（任意）</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <input type="tel" id="lcr-distance" maxlength="5"
+        placeholder="例：1.2"
+        autocomplete="off"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:26px;font-weight:700;padding:14px;text-align:center;outline:none;"
+        oninput="this.value=this.value.replace(/[^0-9.]/g,'')"/>
+      <span style="font-size:20px;font-weight:700;color:var(--text2);flex-shrink:0;">km</span>
     </div>
   </div>
 
@@ -336,7 +356,7 @@
       <select class="qth-select" id="qth-pref"></select>
     </div>
     <div class="qth-row">
-      <div class="qth-label-sm">市区町村</div>
+      <div class="qth-label-sm">市区町村<br><span style="font-size:11px;font-weight:400;color:var(--text2);">任意</span></div>
       <input class="qth-text" id="qth-city" type="text" placeholder="例：京都市" autocomplete="off"/>
     </div>
     <div class="qth-row">
@@ -345,7 +365,18 @@
     </div>
   </div>
 
-  <button class="btn-submit" onclick="submitLog()">記録する</button>
+  <!-- メモ -->
+  <div class="card">
+    <div class="card-label">メモ（任意）</div>
+    <textarea id="memo" rows="3"
+      placeholder="自由記述"
+      autocomplete="off"
+      style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:16px;padding:14px;outline:none;resize:none;line-height:1.6;"
+      onfocus="this.style.borderColor='var(--accent2)'"
+      onblur="this.style.borderColor='var(--border)'"></textarea>
+  </div>
+
+  <button class="btn-submit" id="btn-submit" onclick="submitLog()">記録する</button>
 
   <!-- 未送信：入力タブ内に統合 -->
   <div id="pending-inline" style="display:none;margin-top:10px;">
@@ -520,15 +551,44 @@ const PREFS = [
 
 function buildPrefOptions(selectId, selectedVal) {
   const el = document.getElementById(selectId);
-  el.innerHTML = '<option value="">選択してください</option>'
-    + PREFS.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+
+  // 過去ログから都道府県の使用頻度を集計
+  const freq = {};
+  getLogs().forEach(l => {
+    if (l.pref) freq[l.pref] = (freq[l.pref] || 0) + 1;
+  });
+
+  // 使用頻度上位5件を抽出（1回以上使ったもの）
+  const top = Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([p]) => p);
+
+  // 残りは通常順
+  const rest = PREFS.filter(p => !top.includes(p));
+
+  let html = '<option value="">選択してください</option>';
+
+  // よく使う都道府県（上位に表示）
+  if (top.length > 0) {
+    html += '<optgroup label="よく使う">';
+    html += top.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+    html += '</optgroup>';
+    html += '<optgroup label="すべて">';
+    html += PREFS.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+    html += '</optgroup>';
+  } else {
+    html += PREFS.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+  }
+
+  el.innerHTML = html;
 }
 function getMyQTH() { return JSON.parse(localStorage.getItem('my_qth') || 'null'); }
 function saveMyQTH() {
   const pref   = document.getElementById('my-pref').value;
   const city   = document.getElementById('my-city').value.trim();
   const detail = document.getElementById('my-detail').value.trim();
-  if (!pref || !city) { alert('都道府県と市区町村を入力してください'); return; }
+  if (!pref) { alert('都道府県を入力してください'); return; }
   const qth = { pref, city, detail };
   localStorage.setItem('my_qth', JSON.stringify(qth));
   closeMyQTH();
@@ -657,12 +717,29 @@ function selectCat(btn) {
     state.dcrPower = '';
     document.querySelectorAll('#dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
   }
+
+  // LCR選択時だけ距離カードを表示
+  const lcrCard = document.getElementById('lcr-distance-card');
+  if (state.cat === 'LCR') {
+    lcrCard.style.display = 'block';
+  } else {
+    lcrCard.style.display = 'none';
+    document.getElementById('lcr-distance').value = '';
+  }
 }
 
 function selectTokushoMode(btn) {
   document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   state.tokushoMode = btn.dataset.mode;
+  // レピーター選択時のみ名前入力欄を表示
+  const row = document.getElementById('repeater-name-row');
+  if (state.tokushoMode === 'レピーター') {
+    row.style.display = 'block';
+  } else {
+    row.style.display = 'none';
+    document.getElementById('repeater-name').value = '';
+  }
 }
 
 function selectDcrPower(btn) {
@@ -681,21 +758,31 @@ function selectRst(type, btn) {
     return;
   }
 
-  // 送信・受信の全ボタン（2行分）の選択を解除
   if (type === 'tx') {
+    const alreadyActive = btn.classList.contains('active');
     document.querySelectorAll('#rst-tx .btn-rst, #rst-tx-2 .btn-rst').forEach(b => b.classList.remove('active'));
-    state.rstTx = val;
+    if (!alreadyActive) {
+      btn.classList.add('active');
+      state.rstTx = val;
+    } else {
+      state.rstTx = '';
+    }
     document.getElementById('rst-tx-free').value = '';
   } else {
+    const alreadyActive = btn.classList.contains('active');
     document.querySelectorAll('#rst-rx .btn-rst:not([data-val="CBL"]), #rst-rx-2 .btn-rst:not([data-val="CBL"])').forEach(b => b.classList.remove('active'));
-    state.rstRx = val;
-    document.getElementById('rst-rx-free').value = '';
-    if (val === 'M5' && state.rstCbl) {
-      state.rstCbl = false;
-      document.querySelector('#rst-rx-2 .btn-rst[data-val="CBL"]').classList.remove('active');
+    if (!alreadyActive) {
+      btn.classList.add('active');
+      state.rstRx = val;
+      if (val === 'M5' && state.rstCbl) {
+        state.rstCbl = false;
+        document.querySelector('#rst-rx-2 .btn-rst[data-val="CBL"]').classList.remove('active');
+      }
+    } else {
+      state.rstRx = '';
     }
+    document.getElementById('rst-rx-free').value = '';
   }
-  btn.classList.add('active');
 }
 
 function onRstFreeInput(type, el) {
@@ -710,6 +797,11 @@ function onRstFreeInput(type, el) {
 
 // ===== 記録する =====
 function submitLog() {
+  const submitBtn = document.getElementById('btn-submit');
+  if (submitBtn.disabled) return;
+  submitBtn.disabled = true;
+  submitBtn.textContent = '記録中…';
+  submitBtn.style.opacity = '0.5';
   const csRaw  = document.getElementById('callsign').value.trim();
   const cs     = normalizeCallsign(csRaw); // 保存前に正規化（全角→半角・ひらがな統一）
   const portable = document.getElementById('portable').value.trim();
@@ -718,11 +810,12 @@ function submitLog() {
   const city  = document.getElementById('qth-city').value.trim();
   const detail = document.getElementById('qth-detail').value.trim();
 
-  if (!state.cat)               { alert('種別を選択してください'); return; }
-  if (!cs)                      { alert('コールサインを入力してください'); return; }
-  if (!state.rstRx || !state.rstTx) { alert('レポートを選択してください'); return; }
-  if (!pref)                    { alert('都道府県を選択してください'); return; }
-  if (!city)                    { alert('市区町村を入力してください'); return; }
+  if (!state.cat)  { alert('トランシーバーを選択してください'); return; }
+  if (!cs)         { alert('コールサインを入力してください'); return; }
+  if (!pref)       { alert('都道府県を選択してください'); return; }
+  // CBL選択時は送信レポート不要、それ以外はどちらか入力があればOK
+  const rstRxVal = state.rstRx + (state.rstCbl ? 'CBL' : '');
+  const rstTxVal = state.rstCbl ? '' : state.rstTx;
 
   const myQTH = getMyQTH();
   const log = {
@@ -730,23 +823,35 @@ function submitLog() {
     ts: new Date().toISOString(),
     cat: state.cat,
     tokushoMode: state.tokushoMode || '',
+    repeaterName: state.tokushoMode === 'レピーター' ? (document.getElementById('repeater-name').value.trim() || '') : '',
     dcrPower: state.dcrPower || '',
+    lcrDistance: state.cat === 'LCR' ? (document.getElementById('lcr-distance').value.trim() || '') : '',
     cs: csDisplay,
     csBase: cs,
     csNorm: normalizeCallsign(cs),
     portable: portable,
-    rstRx: state.rstRx + (state.rstCbl ? 'CBL' : ''),
-    rstTx: state.rstTx,
+    rstRx: rstRxVal,
+    rstTx: rstTxVal,
     pref, city, detail,
     myPref:   myQTH ? myQTH.pref   : '',
     myCity:   myQTH ? myQTH.city   : '',
     myDetail: myQTH ? myQTH.detail : '',
+    memo: document.getElementById('memo').value.trim() || '',
     sent: false
   };
 
   const logs = getLogs();
   logs.push(log);
   saveLogs(logs);
+
+  // ボタンを消す→1.5秒後に復活
+  submitBtn.style.display = 'none';
+  setTimeout(() => {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '記録する';
+    submitBtn.style.opacity = '1';
+    submitBtn.style.display = 'block';
+  }, 1500);
 
   // フラッシュ
   const flash = document.getElementById('flash');
@@ -769,8 +874,13 @@ function submitLog() {
   state.tokushoMode = '';
   state.dcrPower = '';
   document.querySelectorAll('#tokusho-mode-card .btn-cat, #dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
+  if (document.getElementById('lcr-distance')) document.getElementById('lcr-distance').value = '';
+  if (document.getElementById('repeater-name')) document.getElementById('repeater-name').value = '';
+  if (document.getElementById('repeater-name-row')) document.getElementById('repeater-name-row').style.display = 'none';
+  document.getElementById('memo').value = '';
 
   updateCounter();
+  buildPrefOptions('qth-pref', '');
   document.getElementById('callsign').focus();
 }
 
@@ -800,12 +910,15 @@ function updatePendingInline() {
 function exportCSV() {
   const logs = getLogs();
   if (logs.length === 0) { alert('記録がありません'); return; }
-  const headers = ['No','日時','種別','交信方法','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細'];
+  const headers = ['No','日時','種別','DCR出力','特小交信方法','特小レピーター名','LCR距離(km)','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細','メモ'];
   const rows = logs.map((l, i) => [
     i + 1,
     new Date(l.ts).toLocaleString('ja-JP'),
     l.cat || '',
+    l.dcrPower || '',
     l.tokushoMode || '',
+    l.repeaterName || '',
+    l.lcrDistance || '',
     l.csBase || l.cs || '',
     l.portable || '',
     l.rstTx || '',
@@ -815,7 +928,8 @@ function exportCSV() {
     l.detail || '',
     l.myPref || '',
     l.myCity || '',
-    l.myDetail || ''
+    l.myDetail || '',
+    l.memo || ''
   ]);
   const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const bom = '\uFEFF';
@@ -829,7 +943,7 @@ function exportJSON() {
 }
 
 function downloadTemplate() {
-  const headers = ['No','日時','種別','交信方法','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細'];
+  const headers = ['No','日時','種別','DCR出力','特小交信方法','特小レピーター名','LCR距離(km)','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細','メモ'];
   const bom = '\uFEFF';
   downloadFile(bom + headers.map(h => `"${h}"`).join(',') + '\n', 'oplog_template.csv', 'text/csv');
 }
@@ -945,8 +1059,11 @@ async function sendAll() {
   if (pending.length === 0) return;
 
   const btn = document.getElementById('btn-send-all');
-  btn.textContent = '送信中...';
-  btn.disabled = true;
+  const inlineBtn = document.querySelector('#pending-inline button');
+
+  // ボタンを消す
+  btn.style.display = 'none';
+  if (inlineBtn) inlineBtn.style.display = 'none';
 
   let successCount = 0;
   const updatedLogs = [...logs];
@@ -959,7 +1076,6 @@ async function sendAll() {
         body: JSON.stringify(log),
         headers: { 'Content-Type': 'application/json' }
       });
-      // no-corsモードではレスポンスが読めないが送信は成功している
       const idx = updatedLogs.findIndex(l => l.id === log.id);
       if (idx !== -1) updatedLogs[idx] = { ...updatedLogs[idx], sent: true };
       successCount++;
@@ -969,8 +1085,10 @@ async function sendAll() {
   }
 
   saveLogs(updatedLogs);
-  btn.textContent = '▲ まとめてクラウドに送信';
-  btn.disabled = false;
+
+  // 送信完了→ボタン復活
+  btn.style.display = 'block';
+  if (inlineBtn) inlineBtn.style.display = 'block';
 
   if (successCount === pending.length) {
     alert(`✓ ${successCount}件をスプレッドシートに記録しました`);
