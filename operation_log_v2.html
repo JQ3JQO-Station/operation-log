@@ -14,14 +14,14 @@
 <style>
   :root {
     --bg: #0d0d0d;
-    --surface: #1c1c1e;
-    --surface2: #2c2c2e;
+    --surface: #1a2535;
+    --surface2: #243447;
     --accent: #30d158;
     --accent2: #0a84ff;
     --warn: #ffd60a;
     --text: #ffffff;
     --text2: #ababab;
-    --border: #3a3a3c;
+    --border: #2e4a6a;
     --radius: 14px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -167,7 +167,50 @@
   .pending-item .meta { color: var(--text2); font-size: 12px; }
   .btn-send-all { width: 100%; background: var(--warn); border: none; border-radius: var(--radius); color: #000; font-size: 17px; font-weight: 700; padding: 16px; cursor: pointer; margin-top: 10px; font-family: 'Noto Sans JP', sans-serif; }
   .btn-send-all:active { opacity: 0.8; }
+  /* 検索結果1行レイアウト */
+  .search-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 6px 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 14px;
+  }
+  .search-item:last-child { border-bottom: none; }
+  .search-cs2 { font-family: 'Share Tech Mono', monospace; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .search-qth2 { color: var(--text2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .search-rst2 { font-family: 'Share Tech Mono', monospace; color: var(--accent); white-space: nowrap; }
+  .search-time2 { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .search-myqth2 { color: var(--text2); font-size: 12px; grid-column: 1 / -1; padding-left: 2px; }
   .empty-msg { text-align: center; color: var(--text2); font-size: 15px; padding: 20px 0; }
+
+  /* ログ一覧 */
+  .log-item {
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-item-top {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  }
+  .log-cat {
+    font-family: 'Share Tech Mono', monospace; font-size: 13px; font-weight: 700;
+    color: #000; background: var(--accent2); border-radius: 4px; padding: 2px 6px;
+    flex-shrink: 0;
+  }
+  .log-cs {
+    font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 700;
+    color: var(--text); flex: 1;
+  }
+  .log-rst {
+    font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .log-item-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .log-qth { font-size: 13px; color: var(--text2); }
+  .log-time { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--border); }
 </style>
 </head>
 <body>
@@ -213,6 +256,7 @@
 
 <div class="nav-btns">
   <button class="nav-btn active" onclick="switchTab('input',this)">入力</button>
+  <button class="nav-btn" onclick="switchTab('log',this)">ログ一覧 ／ 検索</button>
   <button class="nav-btn" onclick="switchTab('data',this)">データ管理</button>
 </div>
 
@@ -387,6 +431,59 @@
   </div>
 
   <div class="counter">本日の記録：<span id="count">0</span> 局</div>
+</div>
+
+<!-- ログ一覧パネル -->
+<div class="tab-pane" id="tab-log">
+
+  <!-- コールサイン検索 -->
+  <div class="card">
+    <div class="card-label">コールサイン検索</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input type="text" id="search-cs" placeholder="きょうとAB123"
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;padding:12px 14px;outline:none;"
+        oninput="searchByCs()"/>
+      <button onclick="clearSearch('cs')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;">クリア</button>
+    </div>
+    <div id="search-cs-count" style="font-size:13px;color:var(--text2);margin-bottom:6px;display:none;"></div>
+    <div id="search-result-list"></div>
+  </div>
+
+  <!-- 日付+トランシーバー検索 -->
+  <div class="card">
+    <div class="card-label">日付＋トランシーバー検索</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input type="month" id="search-month"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;padding:12px 14px;outline:none;color-scheme:dark;"
+        onchange="searchByDate()"/>
+      <button onclick="clearSearch('date')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;">クリア</button>
+    </div>
+    <div class="btn-group" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px;" id="search-cat-btns">
+      <button class="btn-cat active" data-cat="全て" onclick="selectSearchCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">全て</button>
+      <button class="btn-cat" data-cat="DCR" onclick="selectSearchCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">DCR</button>
+      <button class="btn-cat" data-cat="LCR" onclick="selectSearchCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">LCR</button>
+      <button class="btn-cat" data-cat="特小" onclick="selectSearchCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">特小</button>
+      <button class="btn-cat" data-cat="CB" onclick="selectSearchCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">CB</button>
+    </div>
+    <div id="search-date-count" style="font-size:13px;color:var(--text2);margin-bottom:6px;display:none;"></div>
+    <div id="search-result-date-list"></div>
+  </div>
+
+  <!-- デイリーサマリー -->
+  <div class="card" id="daily-summary-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">本日のログ</div>
+      <button onclick="copyDaily()" style="background:var(--accent2);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">コピー</button>
+    </div>
+    <div id="daily-text" style="font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--text);line-height:2;white-space:pre-wrap;"></div>
+  </div>
+
+  <!-- 全ログ一覧 -->
+  <div class="card">
+    <div class="card-label">ログ一覧 <span id="log-total" style="font-size:13px;color:var(--text2);font-weight:400;"></span></div>
+    <div id="log-list"></div>
+  </div>
 </div>
 
 <!-- データ管理タブ -->
@@ -891,9 +988,269 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'data') renderPending();
+  if (tab === 'log') renderLog();
 }
 
-// 未送信インライン表示更新
+function renderLog() {
+  const logs = [...getLogs()].reverse();
+  const list = document.getElementById('log-list');
+  const total = document.getElementById('log-total');
+  total.textContent = `全${logs.length}件`;
+
+  // ===== デイリーサマリー生成 =====
+  const today = new Date().toLocaleDateString('ja-JP');
+  const todayLogs = [...getLogs()].filter(l =>
+    new Date(l.ts).toLocaleDateString('ja-JP') === today
+  );
+
+  const CAT_ORDER = ['DCR', 'LCR', '特小', 'CB'];
+  let dailyText = '';
+
+  if (todayLogs.length === 0) {
+    dailyText = '本日の記録はありません';
+  } else {
+    const groups = {};
+    todayLogs.forEach(l => {
+      const cat = l.cat || 'その他';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(l);
+    });
+
+    const orderedCats = [
+      ...CAT_ORDER.filter(c => groups[c]),
+      ...Object.keys(groups).filter(c => !CAT_ORDER.includes(c))
+    ];
+
+    orderedCats.forEach(cat => {
+      dailyText += `${cat}\n`;
+
+      if (cat === '特小') {
+        // 単信とレピーター別に分類
+        const tansin = groups[cat].filter(l => l.tokushoMode !== 'レピーター');
+        const repeater = groups[cat].filter(l => l.tokushoMode === 'レピーター');
+
+        if (tansin.length > 0) {
+          dailyText += `　単信\n`;
+          tansin.forEach(l => {
+            const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+            dailyText += `　　${l.cs}　${rst}\n`;
+          });
+        }
+
+        if (repeater.length > 0) {
+          // レピーター名でさらにグループ化
+          const repGroups = {};
+          repeater.forEach(l => {
+            const name = l.repeaterName || 'レピーター';
+            if (!repGroups[name]) repGroups[name] = [];
+            repGroups[name].push(l);
+          });
+          Object.entries(repGroups).forEach(([name, logs]) => {
+            dailyText += `　${name}\n`;
+            logs.forEach(l => {
+              const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+              dailyText += `　　${l.cs}　${rst}\n`;
+            });
+          });
+        }
+
+      } else if (cat === 'CB') {
+        // 交信成立とCBLに分類
+        const qso = groups[cat].filter(l => !String(l.rstRx).includes('CBL'));
+        const cbl = groups[cat].filter(l => String(l.rstRx).includes('CBL'));
+
+        if (qso.length > 0) {
+          qso.forEach(l => {
+            const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+            dailyText += `　${l.cs}　${rst}\n`;
+          });
+        }
+
+        if (cbl.length > 0) {
+          dailyText += `　CBL\n`;
+          cbl.forEach(l => {
+            dailyText += `　　${l.cs}　${l.rstRx}\n`;
+          });
+        }
+
+      } else {
+        // DCR・LCRなど通常
+        groups[cat].forEach(l => {
+          const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+          dailyText += `　${l.cs}　${rst}\n`;
+        });
+      }
+    });
+  }
+
+  document.getElementById('daily-text').textContent = dailyText.trim();
+
+  // ===== 全ログ一覧 =====
+  if (logs.length === 0) {
+    list.innerHTML = '<div class="empty-msg">記録がありません</div>';
+    return;
+  }
+
+  list.innerHTML = logs.map(l => {
+    const d = new Date(l.ts);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+    const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+    const cs = l.cs || '';
+    return `<div class="log-item">
+      <div class="log-item-top">
+        <span class="log-cat">${l.cat || ''}</span>
+        <span class="log-cs">${cs}</span>
+        <span class="log-rst">${rst}</span>
+      </div>
+      <div class="log-item-bottom">
+        <span class="log-qth">${qth}</span>
+        <span class="log-time">${dateStr}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let searchCat = '全て';
+
+function selectSearchCat(btn) {
+  document.querySelectorAll('#search-cat-btns .btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  searchCat = btn.dataset.cat;
+  searchByDate();
+}
+
+function searchByCs() {
+  const query = normalizeCallsign(document.getElementById('search-cs').value.trim());
+  const resultList = document.getElementById('search-result-list');
+  const countEl = document.getElementById('search-cs-count');
+
+  if (!query) {
+    resultList.innerHTML = '';
+    countEl.style.display = 'none';
+    return;
+  }
+
+  const results = getLogs().filter(l => {
+    const csNorm = l.csNorm || normalizeCallsign(l.cs || '');
+    return csNorm.includes(query) || (l.cs || '').toLowerCase().includes(query.toLowerCase());
+  }).reverse();
+
+  countEl.style.display = 'block';
+  countEl.textContent = `${results.length}件`;
+
+  if (results.length === 0) {
+    resultList.innerHTML = '<div class="empty-msg">該当なし</div>';
+    return;
+  }
+
+  resultList.innerHTML = results.map(l => {
+    const d = new Date(l.ts);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+    const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+    const myqth = [l.myPref, l.myCity, l.myDetail].filter(Boolean).join(' ');
+    return `<div class="search-item">
+      <span class="search-cs2">${l.cs||''}</span>
+      <span class="search-qth2">${qth}</span>
+      <span class="search-rst2">${rst}</span>
+      <span class="search-time2">${dateStr}</span>
+      ${myqth ? `<span class="search-myqth2">自局：${myqth}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function searchByDate() {
+  const month = document.getElementById('search-month').value;
+  const resultList = document.getElementById('search-result-date-list');
+  const countEl = document.getElementById('search-date-count');
+
+  if (!month) {
+    resultList.innerHTML = '';
+    countEl.style.display = 'none';
+    return;
+  }
+
+  const [year, mon] = month.split('-').map(Number);
+  let results = getLogs().filter(l => {
+    const d = new Date(l.ts);
+    return d.getFullYear() === year && d.getMonth() + 1 === mon;
+  });
+
+  if (searchCat !== '全て') {
+    results = results.filter(l => l.cat === searchCat);
+  }
+
+  countEl.style.display = 'block';
+  countEl.textContent = `${year}年${mon}月 ${searchCat !== '全て' ? searchCat + ' ' : ''}${results.length}件`;
+
+  if (results.length === 0) {
+    resultList.innerHTML = '<div class="empty-msg">該当なし</div>';
+    return;
+  }
+
+  const CAT_ORDER = ['DCR', 'LCR', '特小', 'CB'];
+  const groups = {};
+  results.forEach(l => {
+    const cat = l.cat || 'その他';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(l);
+  });
+  const orderedCats = [
+    ...CAT_ORDER.filter(c => groups[c]),
+    ...Object.keys(groups).filter(c => !CAT_ORDER.includes(c))
+  ];
+
+  resultList.innerHTML = orderedCats.map(cat => {
+    const items = groups[cat].map(l => {
+      const d = new Date(l.ts);
+      const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+      const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+      const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+      const myqth = [l.myPref, l.myCity, l.myDetail].filter(Boolean).join(' ');
+      return `<div class="search-item">
+        <span class="search-time2">${dateStr}</span>
+        <span class="search-cs2">${l.cs||''}</span>
+        <span class="search-qth2">${qth}</span>
+        <span class="search-rst2">${rst}</span>
+        ${myqth ? `<span class="search-myqth2">自局：${myqth}</span>` : ''}
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;color:var(--accent2);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:4px;">${cat}</div>
+      ${items}
+    </div>`;
+  }).join('');
+}
+
+function clearSearch(type) {
+  if (type === 'cs') {
+    document.getElementById('search-cs').value = '';
+    searchByCs();
+  } else {
+    document.getElementById('search-month').value = '';
+    searchByDate();
+  }
+}
+
+function copyDaily() {
+  const text = document.getElementById('daily-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ コピー完了';
+    setTimeout(() => btn.textContent = 'コピー', 2000);
+  }).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    const btn = event.target;
+    btn.textContent = '✓ コピー完了';
+    setTimeout(() => btn.textContent = 'コピー', 2000);
+  });
+}
 function updatePendingInline() {
   const pending = getLogs().filter(l => !l.sent);
   const el = document.getElementById('pending-inline');
