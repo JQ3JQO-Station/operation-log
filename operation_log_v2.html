@@ -19,6 +19,7 @@
     --accent: #30d158;
     --accent2: #0a84ff;
     --warn: #ffd60a;
+    --danger: #ff453a;
     --text: #ffffff;
     --text2: #ababab;
     --border: #2e4a6a;
@@ -250,6 +251,27 @@
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeMyQTH()">キャンセル</button>
       <button class="btn-modal-ok" onclick="saveMyQTH()">設定する</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAS URL設定モーダル -->
+<div class="modal-overlay" id="gasurl-modal">
+  <div class="modal">
+    <h2>クラウド保存先の設定</h2>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+      GoogleスプレッドシートのGASをデプロイして取得したURLを入力してください。
+    </p>
+    <input class="qth-text" id="gas-url-input" type="url"
+      placeholder="https://script.google.com/macros/s/..."
+      autocomplete="off"
+      style="width:100%;font-size:13px;padding:12px;margin-bottom:8px;"/>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;">
+      ※ クラウド保存を使わない場合はスキップできます
+    </p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="skipGasUrl()">スキップ</button>
+      <button class="btn-modal-ok" onclick="saveGasUrl()">設定する</button>
     </div>
   </div>
 </div>
@@ -488,6 +510,12 @@
 
 <!-- データ管理タブ -->
 <div class="tab-pane" id="tab-data">
+  <!-- GAS URL設定 -->
+  <div class="card">
+    <div class="card-label">クラウド保存先</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:10px;word-break:break-all;" id="gasurl-display">未設定</div>
+    <button onclick="openGasUrl()" style="width:100%;background:var(--surface2);border:2px solid var(--accent2);border-radius:10px;color:var(--accent2);font-size:15px;font-weight:700;padding:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">GAS URLを変更する</button>
+  </div>
   <!-- エクスポート -->
   <div class="card">
     <div class="card-label">エクスポート</div>
@@ -519,6 +547,15 @@
     <div class="pending-list" id="pending-list"></div>
     <button class="btn-send-all" id="btn-send-all" onclick="sendAll()" style="display:none;">
       ▲ まとめてクラウドに送信
+    </button>
+  </div>
+
+  <!-- 全データ削除 -->
+  <div class="card" style="border:2px solid var(--danger);">
+    <div class="card-label" style="color:var(--danger);">⚠ 危険な操作</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px;">ブラウザに保存されている全ログデータを削除します。この操作は元に戻せません。</p>
+    <button onclick="deleteAllData()" style="width:100%;background:transparent;border:2px solid var(--danger);border-radius:var(--radius);color:var(--danger);font-size:17px;font-weight:700;padding:16px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+      全データを削除する
     </button>
   </div>
 </div>
@@ -726,7 +763,12 @@ function init() {
   renderMyQTH();
   buildPrefOptions('qth-pref', '');
   buildPrefOptions('my-pref', '');
-  // 未設定なら自動でモーダルを開く
+  renderGasUrlDisplay();
+  // GAS URLが未設定なら初回モーダルを表示
+  if (!getGasUrl() && localStorage.getItem('gas_url') === null) {
+    setTimeout(openGasUrl, 800);
+  }
+  // 未設定なら自局QTHモーダルを開く
   if (!getMyQTH()) setTimeout(openMyQTH, 400);
   updateCounter();
   checkOnline();
@@ -1408,9 +1450,52 @@ function renderPending() {
   }).join('');
 }
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzzfDl0LT-817BO-FhWqVaL6lPrF6jQpZNUVlmarqM2CqpQSvtBpLApgVn8MxwIJlEDgg/exec';
+function getGasUrl() {
+  return localStorage.getItem('gas_url') || '';
+}
+
+function openGasUrl() {
+  document.getElementById('gas-url-input').value = getGasUrl();
+  document.getElementById('gasurl-modal').classList.add('show');
+}
+
+function saveGasUrl() {
+  const url = document.getElementById('gas-url-input').value.trim();
+  if (url && !url.startsWith('https://script.google.com/')) {
+    alert('正しいGAS URLを入力してください');
+    return;
+  }
+  localStorage.setItem('gas_url', url);
+  document.getElementById('gasurl-modal').classList.remove('show');
+  renderGasUrlDisplay();
+}
+
+function skipGasUrl() {
+  localStorage.setItem('gas_url', '');
+  document.getElementById('gasurl-modal').classList.remove('show');
+  renderGasUrlDisplay();
+}
+
+function renderGasUrlDisplay() {
+  const url = getGasUrl();
+  const el = document.getElementById('gasurl-display');
+  if (url) {
+    el.textContent = url;
+    el.style.color = 'var(--accent)';
+  } else {
+    el.textContent = '未設定（クラウド保存無効）';
+    el.style.color = 'var(--text2)';
+  }
+}
+
+const GAS_URL = getGasUrl();
 
 async function sendAll() {
+  const gasUrl = getGasUrl();
+  if (!gasUrl) {
+    alert('GASのURLが設定されていません。\nデータ管理タブで設定してください。');
+    return;
+  }
   const logs = getLogs();
   const pending = logs.filter(l => !l.sent);
   if (pending.length === 0) return;
@@ -1427,7 +1512,7 @@ async function sendAll() {
 
   for (const log of pending) {
     try {
-      await fetch(GAS_URL, {
+      await fetch(gasUrl, {
         method: 'POST',
         mode: 'no-cors',
         body: JSON.stringify(log),
@@ -1455,6 +1540,19 @@ async function sendAll() {
 
   renderPending();
   updateCounter();
+}
+
+function deleteAllData() {
+  const count = getLogs().length;
+  if (count === 0) { alert('削除するデータがありません'); return; }
+  const step1 = confirm(`⚠ 警告\n\nブラウザ内の全ログ（${count}件）を削除します。\nこの操作は元に戻せません。\n\n本当に削除しますか？`);
+  if (!step1) return;
+  const step2 = confirm('最終確認\n\n本当に全データを削除しますか？\nバックアップはお済みですか？');
+  if (!step2) return;
+  localStorage.removeItem('rc_logs');
+  updateCounter();
+  renderPending();
+  alert('全データを削除しました');
 }
 
 function checkOnline() {
