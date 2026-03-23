@@ -268,10 +268,19 @@
   <div class="card">
     <div class="card-label">種別</div>
     <div class="btn-group">
-      <button class="btn-cat" data-cat="DCR"  onclick="selectCat(this)">DCR<span class="cat-sub">デジタル簡易</span></button>
-      <button class="btn-cat" data-cat="LCR"  onclick="selectCat(this)">LCR<span class="cat-sub">ライセンスフリー</span></button>
-      <button class="btn-cat" data-cat="特小" onclick="selectCat(this)">特小<span class="cat-sub">特定小電力</span></button>
-      <button class="btn-cat" data-cat="CB"   onclick="selectCat(this)">CB<span class="cat-sub">市民ラジオ</span></button>
+      <button class="btn-cat" data-cat="DCR"  onclick="selectCat(this)">DCR</button>
+      <button class="btn-cat" data-cat="LCR"  onclick="selectCat(this)">LCR</button>
+      <button class="btn-cat" data-cat="特小" onclick="selectCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:18px;font-weight:700;">特小</button>
+      <button class="btn-cat" data-cat="CB"   onclick="selectCat(this)">CB</button>
+    </div>
+  </div>
+
+  <!-- 特小：交信方法（特小選択時のみ表示） -->
+  <div class="card" id="tokusho-mode-card" style="display:none;">
+    <div class="card-label">交信方法</div>
+    <div class="btn-group" style="grid-template-columns:repeat(2,1fr);">
+      <button class="btn-cat" data-mode="単信" onclick="selectTokushoMode(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:400;">単信</button>
+      <button class="btn-cat" data-mode="レピーター" onclick="selectTokushoMode(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:400;">レピーター</button>
     </div>
   </div>
 
@@ -308,24 +317,40 @@
     <div class="rst-row">
       <div class="rst-row-inner">
         <div class="rst-side-label">送信</div>
-        <div class="btn-rst-group" id="rst-tx" style="grid-template-columns:repeat(6,1fr);flex:1;">
-          <button class="btn-rst" data-val="59" onclick="selectRst('tx',this)">59</button>
-          <button class="btn-rst" data-val="57" onclick="selectRst('tx',this)">57</button>
-          <button class="btn-rst" data-val="55" onclick="selectRst('tx',this)">55</button>
-          <button class="btn-rst" data-val="53" onclick="selectRst('tx',this)">53</button>
-          <button class="btn-rst" data-val="51" onclick="selectRst('tx',this)">51</button>
-          <button class="btn-rst" data-val="M5" onclick="selectRst('tx',this)">M5</button>
+        <div style="flex:1;display:flex;align-items:stretch;gap:5px;">
+          <input type="tel" id="rst-tx-free" maxlength="3"
+            placeholder="00"
+            autocomplete="off"
+            style="flex:2;min-width:0;background:var(--surface2);border:2px solid var(--border);border-radius:8px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;padding:10px 4px;text-align:center;outline:none;"
+            oninput="onRstFreeInput('tx',this)"/>
+          <div class="btn-rst-group" id="rst-tx" style="grid-template-columns:repeat(7,1fr);flex:3;">
+            <button class="btn-rst" data-val="59" onclick="selectRst('tx',this)" style="font-size:11px;padding:0;">59</button>
+            <button class="btn-rst" data-val="57" onclick="selectRst('tx',this)" style="font-size:11px;padding:0;">57</button>
+            <button class="btn-rst" data-val="55" onclick="selectRst('tx',this)" style="font-size:11px;padding:0;">55</button>
+            <button class="btn-rst" data-val="53" onclick="selectRst('tx',this)" style="font-size:11px;padding:0;">53</button>
+            <button class="btn-rst" data-val="51" onclick="selectRst('tx',this)" style="font-size:11px;padding:0;">51</button>
+            <button class="btn-rst" data-val="M5" onclick="selectRst('tx',this)" style="font-size:11px;padding:0;">M5</button>
+            <div></div>
+          </div>
         </div>
       </div>
       <div class="rst-row-inner">
         <div class="rst-side-label">受信</div>
-        <div class="btn-rst-group" id="rst-rx" style="grid-template-columns:repeat(6,1fr);flex:1;">
-          <button class="btn-rst" data-val="59" onclick="selectRst('rx',this)">59</button>
-          <button class="btn-rst" data-val="57" onclick="selectRst('rx',this)">57</button>
-          <button class="btn-rst" data-val="55" onclick="selectRst('rx',this)">55</button>
-          <button class="btn-rst" data-val="53" onclick="selectRst('rx',this)">53</button>
-          <button class="btn-rst" data-val="51" onclick="selectRst('rx',this)">51</button>
-          <button class="btn-rst" data-val="M5" onclick="selectRst('rx',this)">M5</button>
+        <div style="flex:1;display:flex;align-items:stretch;gap:5px;">
+          <input type="tel" id="rst-rx-free" maxlength="3"
+            placeholder="00"
+            autocomplete="off"
+            style="flex:2;min-width:0;background:var(--surface2);border:2px solid var(--border);border-radius:8px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;padding:10px 4px;text-align:center;outline:none;"
+            oninput="onRstFreeInput('rx',this)"/>
+          <div class="btn-rst-group" id="rst-rx" style="grid-template-columns:repeat(7,1fr);flex:3;">
+            <button class="btn-rst" data-val="59" onclick="selectRst('rx',this)" style="font-size:11px;padding:0;">59</button>
+            <button class="btn-rst" data-val="57" onclick="selectRst('rx',this)" style="font-size:11px;padding:0;">57</button>
+            <button class="btn-rst" data-val="55" onclick="selectRst('rx',this)" style="font-size:11px;padding:0;">55</button>
+            <button class="btn-rst" data-val="53" onclick="selectRst('rx',this)" style="font-size:11px;padding:0;">53</button>
+            <button class="btn-rst" data-val="51" onclick="selectRst('rx',this)" style="font-size:11px;padding:0;">51</button>
+            <button class="btn-rst" data-val="M5" onclick="selectRst('rx',this)" style="font-size:11px;padding:0;">M5</button>
+            <button class="btn-rst" data-val="CBL" onclick="selectRst('rx',this)" style="font-size:11px;padding:0;">CBL</button>
+          </div>
         </div>
       </div>
     </div>
@@ -520,7 +545,7 @@ function renderMyQTH() {
 }
 
 // ===== 状態 =====
-const state = { cat: '', rstRx: '', rstTx: '' };
+const state = { cat: '', rstRx: '', rstTx: '', rstCbl: false, tokushoMode: '' };
 
 // ===== 初期化 =====
 function init() {
@@ -602,14 +627,57 @@ function selectCat(btn) {
   document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   state.cat = btn.dataset.cat;
+  // 特小選択時だけ交信方法カードを表示
+  const tokushoCard = document.getElementById('tokusho-mode-card');
+  if (state.cat === '特小') {
+    tokushoCard.style.display = 'block';
+  } else {
+    tokushoCard.style.display = 'none';
+    state.tokushoMode = '';
+    document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
+  }
+}
+
+function selectTokushoMode(btn) {
+  document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.tokushoMode = btn.dataset.mode;
 }
 
 function selectRst(type, btn) {
+  const val = btn.dataset.val;
+
+  if (type === 'rx' && val === 'CBL') {
+    // M5が選択中はCBL無効
+    if (state.rstRx === 'M5') return;
+    state.rstCbl = !state.rstCbl;
+    btn.classList.toggle('active', state.rstCbl);
+    return;
+  }
+
   const id = type === 'rx' ? 'rst-rx' : 'rst-tx';
-  document.querySelectorAll(`#${id} .btn-rst`).forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`#${id} .btn-rst:not([data-val="CBL"])`).forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (type === 'rx') state.rstRx = btn.dataset.val;
-  else state.rstTx = btn.dataset.val;
+
+  if (type === 'rx') {
+    state.rstRx = val;
+    document.getElementById('rst-rx-free').value = '';
+    // M5選択時はCBLを解除
+    if (val === 'M5' && state.rstCbl) {
+      state.rstCbl = false;
+      document.querySelector('#rst-rx .btn-rst[data-val="CBL"]').classList.remove('active');
+    }
+  } else {
+    state.rstTx = val;
+    document.getElementById('rst-tx-free').value = '';
+  }
+}
+
+function onRstFreeInput(type, el) {
+  const id = type === 'rx' ? 'rst-rx' : 'rst-tx';
+  document.querySelectorAll(`#${id} .btn-rst:not([data-val="CBL"])`).forEach(b => b.classList.remove('active'));
+  if (type === 'rx') state.rstRx = el.value;
+  else state.rstTx = el.value;
 }
 
 // ===== 記録する =====
@@ -633,11 +701,12 @@ function submitLog() {
     id: Date.now(),
     ts: new Date().toISOString(),
     cat: state.cat,
+    tokushoMode: state.tokushoMode || '',
     cs: csDisplay,
     csBase: cs,
     csNorm: normalizeCallsign(cs),
     portable: portable,
-    rstRx: state.rstRx,
+    rstRx: state.rstRx + (state.rstCbl ? 'CBL' : ''),
     rstTx: state.rstTx,
     pref, city, detail,
     myPref:   myQTH ? myQTH.pref   : '',
@@ -663,8 +732,13 @@ function submitLog() {
   document.getElementById('qth-city').value = '';
   document.getElementById('qth-detail').value = '';
   document.querySelectorAll('.btn-rst').forEach(b => b.classList.remove('active'));
+  document.getElementById('rst-tx-free').value = '';
+  document.getElementById('rst-rx-free').value = '';
   state.rstRx = '';
   state.rstTx = '';
+  state.rstCbl = false;
+  state.tokushoMode = '';
+  document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
 
   updateCounter();
   document.getElementById('callsign').focus();
