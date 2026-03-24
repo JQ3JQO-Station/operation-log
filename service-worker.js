@@ -1,4 +1,4 @@
-const CACHE_NAME = 'operation-log-v3';
+const CACHE_NAME = 'operation-log-v4';
 const FILES_TO_CACHE = [
   '/operation-log/operation_log_v2.html',
   '/operation-log/manifest.json'
