@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OPLog">
+<meta name="theme-color" content="#0077cc">
+<link rel="manifest" href="manifest.json">
+<title>OPERATION LOG</title>
+<!-- standalone版：GAS連携なし・スタンドアロン動作 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a2535;
+    --surface2: #243447;
+    --accent: #30d158;
+    --accent2: #0a84ff;
+    --warn: #ffd60a;
+    --danger: #ff453a;
+    --text: #ffffff;
+    --text2: #ababab;
+    --border: #2e4a6a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; padding: 12px; font-size: 16px; }
+
+  .header { text-align: center; padding: 16px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .header h1 { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 0.12em; font-family: 'Share Tech Mono', monospace; }
+  .header p { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+  .card-label { font-size: 15px; font-weight: 700; color: var(--accent2); letter-spacing: 0.06em; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+  .btn-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .btn-cat {
+    background: var(--surface2); border: 2px solid var(--border); border-radius: 12px;
+    color: var(--text2); font-family: 'Share Tech Mono', monospace; font-size: 22px; font-weight: 700;
+    padding: 18px 4px; cursor: pointer; transition: all 0.15s; text-align: center; line-height: 1;
+  }
+  .btn-cat:active { opacity: 0.7; }
+  .btn-cat.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+  .suggest-wrap { position: relative; }
+  input.callsign-input {
+    width: 100%; background: var(--surface2); border: 2px solid var(--border); border-radius: 12px;
+    color: var(--text); font-family: 'Share Tech Mono', monospace;
+    font-size: 26px; font-weight: 700; padding: 16px 14px;
+    letter-spacing: 0.08em; outline: none; transition: border-color 0.15s;
+  }
+  input.callsign-input::placeholder { color: var(--text2); opacity: 0.4; font-size: 16px; font-family: 'Noto Sans JP', sans-serif; }
+  input.callsign-input:focus { border-color: var(--accent2); }
+
+  .suggest-list {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--surface2); border: 1px solid var(--accent2); border-radius: 12px;
+    z-index: 50; max-height: 220px; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+  }
+  .suggest-list.show { display: block; }
+  .suggest-item { padding: 14px 16px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .suggest-item:last-child { border-bottom: none; }
+  .suggest-item:active { background: var(--border); }
+  .suggest-cs { font-family: 'Share Tech Mono', monospace; font-size: 18px; color: var(--text); }
+  .suggest-cs .hi { color: var(--accent2); }
+  .suggest-meta { font-size: 13px; color: var(--text2); }
+
+  .rst-row { display: flex; flex-direction: column; gap: 16px; }
+  .rst-row-inner { display: flex; align-items: center; gap: 8px; }
+  .rst-side-label { font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 36px; }
+  .btn-rst-group { display: grid; gap: 6px; width: 100%; }
+  .btn-rst {
+    background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+    color: var(--text2); font-family: 'Share Tech Mono', monospace; font-size: 20px; font-weight: 700;
+    padding: 0; cursor: pointer; transition: all 0.15s; text-align: center; min-height: 44px;
+  }
+  .btn-rst:active { opacity: 0.7; }
+  .btn-rst.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+  .qth-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+  .qth-label-sm { font-size: 14px; color: var(--text2); white-space: nowrap; min-width: 60px; font-weight: 700; }
+  select.qth-select {
+    flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 16px; padding: 12px 10px; outline: none;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ababab' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; cursor: pointer;
+  }
+  select.qth-select:focus { border-color: var(--accent2); }
+  input.qth-text {
+    flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 16px; padding: 12px 14px; outline: none;
+    font-family: 'Noto Sans JP', sans-serif; transition: border-color 0.15s;
+  }
+  input.qth-text::placeholder { color: var(--text2); opacity: 0.4; }
+  input.qth-text:focus { border-color: var(--accent2); }
+
+  .btn-submit {
+    width: 100%; background: var(--accent); border: none; border-radius: var(--radius);
+    color: #000; font-size: 22px; font-weight: 700; padding: 20px; cursor: pointer;
+    letter-spacing: 0.1em; transition: all 0.15s; margin-top: 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-submit:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-submit:disabled { background: var(--border); color: var(--text2); cursor: not-allowed; transform: none; opacity: 1; }
+
+  .flash {
+    display: none; position: fixed; top: 0; left: 0; right: 0;
+    background: var(--accent); color: #000; text-align: center;
+    padding: 18px; font-weight: 700; font-size: 18px; letter-spacing: 0.08em;
+    z-index: 100; animation: slideDown 0.2s ease;
+  }
+  @keyframes slideDown { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+  .flash.show { display: block; }
+
+  .offline-badge {
+    display: none; align-items: center; gap: 10px;
+    background: rgba(255,214,10,0.1); border: 1px solid var(--warn);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 14px; color: var(--warn);
+  }
+  .offline-badge.show { display: flex; }
+  .offline-badge .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--warn); flex-shrink: 0; animation: blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .counter { text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--text2); margin-top: 12px; }
+  .counter span { color: var(--accent); font-size: 20px; font-weight: 700; }
+
+  .nav-btns { display: flex; gap: 10px; margin-bottom: 16px; }
+  .nav-btn {
+    flex: 1; background: var(--surface2); border: 2px solid var(--border);
+    border-radius: var(--radius); color: var(--text2); font-size: 17px; font-weight: 700;
+    padding: 16px; cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans JP', sans-serif;
+  }
+  .nav-btn.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+  .nav-btn:active { opacity: 0.7; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  .myqth-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; cursor: pointer;
+  }
+  .myqth-bar .label { font-size: 12px; font-weight: 700; color: var(--text2); letter-spacing: 0.08em; margin-bottom: 4px; }
+  .myqth-bar .value { font-size: 16px; font-weight: 700; color: var(--text); }
+  .myqth-bar .value.empty { color: var(--accent2); font-size: 15px; }
+  .myqth-bar .edit-btn { font-size: 14px; color: var(--accent2); white-space: nowrap; padding: 8px 14px; border: 1px solid var(--accent2); border-radius: 8px; background: none; cursor: pointer; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center; min-height: 100vh;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: calc(100% - 32px); max-width: 420px; }
+  .modal h2 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 18px; }
+  .modal-row { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
+  .modal-label { font-size: 14px; color: var(--text2); white-space: nowrap; min-width: 60px; font-weight: 700; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-modal-ok { flex: 1; background: var(--accent2); border: none; border-radius: 10px; color: #fff; font-size: 17px; font-weight: 700; padding: 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
+  .btn-modal-cancel { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-size: 17px; font-weight: 700; padding: 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
+
+  .pending-list { max-height: 200px; overflow-y: auto; }
+  .pending-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 15px; font-family: 'Share Tech Mono', monospace; }
+  .pending-item:last-child { border-bottom: none; }
+  .pending-item .meta { color: var(--text2); font-size: 12px; }
+  .btn-send-all { width: 100%; background: var(--warn); border: none; border-radius: var(--radius); color: #000; font-size: 17px; font-weight: 700; padding: 16px; cursor: pointer; margin-top: 10px; font-family: 'Noto Sans JP', sans-serif; }
+  .btn-send-all:active { opacity: 0.8; }
+  /* 検索結果1行レイアウト */
+  .search-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 6px 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 14px;
+  }
+  .search-item:last-child { border-bottom: none; }
+  .search-cs2 { font-family: 'Share Tech Mono', monospace; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .search-qth2 { color: var(--text2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .search-rst2 { font-family: 'Share Tech Mono', monospace; color: var(--accent); white-space: nowrap; }
+  .search-time2 { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .search-myqth2 { color: var(--text2); font-size: 12px; grid-column: 1 / -1; padding-left: 2px; }
+  .empty-msg { text-align: center; color: var(--text2); font-size: 15px; padding: 20px 0; }
+
+  /* ログ一覧 */
+  .log-item {
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-item-top {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  }
+  .log-cat {
+    font-family: 'Share Tech Mono', monospace; font-size: 13px; font-weight: 700;
+    color: #000; background: var(--accent2); border-radius: 4px; padding: 2px 6px;
+    flex-shrink: 0;
+  }
+  .log-cs {
+    font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 700;
+    color: var(--text); flex: 1;
+  }
+  .log-rst {
+    font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .log-item-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .log-qth { font-size: 13px; color: var(--text2); }
+  .log-time { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--border); }
+</style>
+</head>
+<body>
+
+<div class="flash" id="flash">✓ 記録しました</div>
+
+<div class="header">
+  <h1>OPERATION LOG</h1>
+  <p id="header-date"></p>
+</div>
+
+<!-- 自局QTHバー -->
+<div class="myqth-bar" onclick="openMyQTH()">
+  <div>
+    <div class="label">自局 QTH（運用地）</div>
+    <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
+  </div>
+  <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
+</div>
+
+<!-- 自局QTH編集モーダル -->
+<div class="modal-overlay" id="myqth-modal">
+  <div class="modal">
+    <h2>自局の運用地を設定</h2>
+    <div class="modal-row">
+      <div class="modal-label">都道府県</div>
+      <select class="qth-select" id="my-pref"></select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">市区町村</div>
+      <input class="qth-text" id="my-city" type="text" placeholder="例：京都市" autocomplete="off"/>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">詳細(任意)</div>
+      <input class="qth-text" id="my-detail" type="text" placeholder="例：大文字山" autocomplete="off"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeMyQTH()">キャンセル</button>
+      <button class="btn-modal-ok" onclick="saveMyQTH()">設定する</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAS URL設定モーダル -->
+<div class="modal-overlay" id="gasurl-modal">
+  <div class="modal">
+    <h2>クラウド保存先の設定</h2>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+      GoogleスプレッドシートのGASをデプロイして取得したURLを入力してください。
+    </p>
+    <input class="qth-text" id="gas-url-input" type="url"
+      placeholder="https://script.google.com/macros/s/..."
+      autocomplete="off"
+      style="width:100%;font-size:13px;padding:12px;margin-bottom:8px;"/>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;">
+      ※ クラウド保存を使わない場合はスキップできます
+    </p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="skipGasUrl()">スキップ</button>
+      <button class="btn-modal-ok" onclick="saveGasUrl()">設定する</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav-btns">
+  <button class="nav-btn active" onclick="switchTab('input',this)">入力</button>
+  <button class="nav-btn" onclick="switchTab('log',this)">ログ一覧 ／ 検索</button>
+  <button class="nav-btn" onclick="switchTab('data',this)">データ管理</button>
+</div>
+
+<!-- 入力パネル -->
+<div class="tab-pane active" id="tab-input">
+
+  <div class="offline-badge" id="offline-badge">
+    <div class="dot"></div>
+    <span>オフライン中 — データはブラウザに保存されます</span>
+  </div>
+
+  <!-- 種別 -->
+  <div class="card">
+    <div class="card-label">トランシーバー</div>
+    <div class="btn-group">
+      <button class="btn-cat" data-cat="DCR"  onclick="selectCat(this)">DCR</button>
+      <button class="btn-cat" data-cat="LCR"  onclick="selectCat(this)">LCR</button>
+      <button class="btn-cat" data-cat="特小" onclick="selectCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:18px;font-weight:700;">特小</button>
+      <button class="btn-cat" data-cat="CB"   onclick="selectCat(this)">CB</button>
+    </div>
+  </div>
+
+  <!-- 特小：交信方法（特小選択時のみ表示） -->
+  <div class="card" id="tokusho-mode-card" style="display:none;">
+    <div class="card-label">交信方法</div>
+    <div class="btn-group" style="grid-template-columns:repeat(2,1fr);">
+      <button class="btn-cat" data-mode="単信" onclick="selectTokushoMode(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:400;">単信</button>
+      <button class="btn-cat" data-mode="レピーター" onclick="selectTokushoMode(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:400;">レピーター</button>
+    </div>
+    <div id="repeater-name-row" style="display:none;margin-top:12px;">
+      <input class="qth-text" id="repeater-name" type="text"
+        placeholder="レピーター名（任意）"
+        autocomplete="off"
+        style="width:100%;font-size:18px;padding:14px;"/>
+    </div>
+  </div>
+
+  <!-- DCR：出力（DCR選択時のみ表示） -->
+  <div class="card" id="dcr-power-card" style="display:none;">
+    <div class="card-label">出力</div>
+    <div class="btn-group" style="grid-template-columns:repeat(2,1fr);">
+      <button class="btn-cat" data-power="5W" onclick="selectDcrPower(this)" style="font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;">5W</button>
+      <button class="btn-cat" data-power="1W" onclick="selectDcrPower(this)" style="font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;">1W</button>
+    </div>
+  </div>
+
+  <!-- LCR：距離（LCR選択時のみ表示） -->
+  <div class="card" id="lcr-distance-card" style="display:none;">
+    <div class="card-label">距離（任意）</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <input type="tel" id="lcr-distance" maxlength="5"
+        placeholder="例：1.2"
+        autocomplete="off"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:26px;font-weight:700;padding:14px;text-align:center;outline:none;"
+        oninput="this.value=this.value.replace(/[^0-9.]/g,'')"/>
+      <span style="font-size:20px;font-weight:700;color:var(--text2);flex-shrink:0;">km</span>
+    </div>
+  </div>
+
+  <!-- コールサイン -->
+  <div class="card">
+    <div class="card-label">コールサイン</div>
+    <div class="suggest-wrap">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input class="callsign-input" id="callsign" type="text"
+          placeholder="きょうとAB123"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          style="flex:1;"
+          oninput="onCallsignInput()"
+          onfocus="onCallsignInput()" />
+        <span style="font-size:22px;font-weight:700;color:var(--text2);flex-shrink:0;">/</span>
+        <input class="callsign-input" id="portable" type="tel"
+          placeholder="−"
+          maxlength="1"
+          autocomplete="off"
+          style="width:56px;text-align:center;flex-shrink:0;"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,1)" />
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px;">
+        <span style="font-size:10px;color:var(--text2);">コールサイン（空欄可）</span>
+        <span style="font-size:10px;color:var(--text2);">ポータブル（不要なら空欄）</span>
+      </div>
+      <div class="suggest-list" id="suggest-list"></div>
+    </div>
+  </div>
+
+  <!-- RST -->
+  <div class="card">
+    <div class="card-label">レポート</div>
+    <div class="rst-row">
+      <div class="rst-row-inner">
+        <div class="rst-side-label">送信</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+          <input type="tel" id="rst-tx-free" maxlength="3"
+            placeholder="00"
+            autocomplete="off"
+            style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:24px;font-weight:700;padding:12px;text-align:center;outline:none;"
+            oninput="onRstFreeInput('tx',this)"/>
+          <div class="btn-rst-group" id="rst-tx" style="grid-template-columns:repeat(3,1fr);">
+            <button class="btn-rst" data-val="59" onclick="selectRst('tx',this)">59</button>
+            <button class="btn-rst" data-val="57" onclick="selectRst('tx',this)">57</button>
+            <button class="btn-rst" data-val="55" onclick="selectRst('tx',this)">55</button>
+          </div>
+          <div class="btn-rst-group" id="rst-tx-2" style="grid-template-columns:repeat(3,1fr);">
+            <button class="btn-rst" data-val="53" onclick="selectRst('tx',this)">53</button>
+            <button class="btn-rst" data-val="51" onclick="selectRst('tx',this)">51</button>
+            <button class="btn-rst" data-val="M5" onclick="selectRst('tx',this)">M5</button>
+          </div>
+        </div>
+      </div>
+      <div class="rst-row-inner">
+        <div class="rst-side-label">受信</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+          <input type="tel" id="rst-rx-free" maxlength="3"
+            placeholder="00"
+            autocomplete="off"
+            style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:24px;font-weight:700;padding:12px;text-align:center;outline:none;"
+            oninput="onRstFreeInput('rx',this)"/>
+          <div class="btn-rst-group" id="rst-rx" style="grid-template-columns:repeat(4,1fr);">
+            <button class="btn-rst" data-val="59" onclick="selectRst('rx',this)">59</button>
+            <button class="btn-rst" data-val="57" onclick="selectRst('rx',this)">57</button>
+            <button class="btn-rst" data-val="55" onclick="selectRst('rx',this)">55</button>
+            <button class="btn-rst" data-val="53" onclick="selectRst('rx',this)">53</button>
+          </div>
+          <div class="btn-rst-group" id="rst-rx-2" style="grid-template-columns:repeat(4,1fr);">
+            <button class="btn-rst" data-val="51" onclick="selectRst('rx',this)">51</button>
+            <button class="btn-rst" data-val="M5" onclick="selectRst('rx',this)">M5</button>
+            <button class="btn-rst" data-val="CBL" onclick="selectRst('rx',this)">CBL</button>
+            <div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QTH -->
+  <div class="card">
+    <div class="card-label">QTH</div>
+    <div class="qth-row">
+      <div class="qth-label-sm">都道府県</div>
+      <select class="qth-select" id="qth-pref"></select>
+    </div>
+    <div class="qth-row">
+      <div class="qth-label-sm">市区町村<br><span style="font-size:11px;font-weight:400;color:var(--text2);">任意</span></div>
+      <input class="qth-text" id="qth-city" type="text" placeholder="例：京都市" autocomplete="off"/>
+    </div>
+    <div class="qth-row">
+      <div class="qth-label-sm">詳細(任意)</div>
+      <input class="qth-text" id="qth-detail" type="text" placeholder="例：大文字山" autocomplete="off"/>
+    </div>
+  </div>
+
+  <!-- メモ -->
+  <div class="card">
+    <div class="card-label">メモ（任意）</div>
+    <textarea id="memo" rows="3"
+      placeholder="自由記述"
+      autocomplete="off"
+      style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:16px;padding:14px;outline:none;resize:none;line-height:1.6;"
+      onfocus="this.style.borderColor='var(--accent2)'"
+      onblur="this.style.borderColor='var(--border)'"></textarea>
+  </div>
+
+  <button class="btn-submit" id="btn-submit" onclick="submitLog()">記録する</button>
+
+  <div class="counter">本日の記録：<span id="count">0</span> 局</div>
+</div>
+
+<!-- ログ一覧パネル -->
+<div class="tab-pane" id="tab-log">
+
+  <!-- コールサイン検索 -->
+  <div class="card">
+    <div class="card-label">コールサイン検索</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input type="text" id="search-cs" placeholder="きょうとAB123"
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;padding:12px 14px;outline:none;"
+        oninput="searchByCs()"/>
+      <button onclick="clearSearch('cs')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;">クリア</button>
+    </div>
+    <div id="search-cs-count" style="font-size:13px;color:var(--text2);margin-bottom:6px;display:none;"></div>
+    <div id="search-result-list"></div>
+  </div>
+
+  <!-- 日付+トランシーバー検索 -->
+  <div class="card">
+    <div class="card-label">日付＋トランシーバー検索</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input type="month" id="search-month"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;padding:12px 14px;outline:none;color-scheme:dark;"
+        onchange="searchByDate()"/>
+      <button onclick="clearSearch('date')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;">クリア</button>
+    </div>
+    <div class="btn-group" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px;" id="search-cat-btns">
+      <button class="btn-cat active" data-cat="全て" onclick="selectSearchCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">全て</button>
+      <button class="btn-cat" data-cat="DCR" onclick="selectSearchCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">DCR</button>
+      <button class="btn-cat" data-cat="LCR" onclick="selectSearchCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">LCR</button>
+      <button class="btn-cat" data-cat="特小" onclick="selectSearchCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">特小</button>
+      <button class="btn-cat" data-cat="CB" onclick="selectSearchCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">CB</button>
+    </div>
+    <div id="search-date-count" style="font-size:13px;color:var(--text2);margin-bottom:6px;display:none;"></div>
+    <div id="search-result-date-list"></div>
+  </div>
+
+  <!-- デイリーサマリー -->
+  <div class="card" id="daily-summary-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">本日のログ</div>
+      <button onclick="copyDaily()" style="background:var(--accent2);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">コピー</button>
+    </div>
+    <div id="daily-text" style="font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--text);line-height:2;white-space:pre-wrap;"></div>
+  </div>
+
+  <!-- 全ログ一覧 -->
+  <div class="card">
+    <div class="card-label">ログ一覧 <span id="log-total" style="font-size:13px;color:var(--text2);font-weight:400;"></span></div>
+    <div id="log-list"></div>
+  </div>
+</div>
+
+<!-- データ管理タブ -->
+<div class="tab-pane" id="tab-data">
+
+  <!-- エクスポート -->
+  <div class="card">
+    <div class="card-label">データを保存する</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="exportCSV()" style="background:var(--accent2);border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">CSVで保存（Excel等で開ける）</button>
+      <button onclick="exportJSON()" style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">バックアップ作成</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6;">※ 保存したファイルは大切に管理してください。クラウドや共有フォルダへの保存はご注意ください。</p>
+  </div>
+
+  <!-- インポート -->
+  <div class="card">
+    <div class="card-label">データを読み込む</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="downloadTemplate()" style="background:var(--surface2);border:2px solid var(--accent);border-radius:10px;color:var(--accent);font-size:14px;font-weight:700;padding:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">① CSVテンプレートをダウンロード</button>
+      <label style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;display:block;">
+        ② CSVから読み込む
+        <input type="file" accept=".csv" onchange="importCSV(event)" style="display:none;"/>
+      </label>
+      <label style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;display:block;">
+        バックアップから復元
+        <input type="file" accept=".json" onchange="importJSON(event)" style="display:none;"/>
+      </label>
+    </div>
+  </div>
+
+  <!-- 全データ削除 -->
+  <div class="card" style="border:2px solid var(--danger);">
+    <div class="card-label" style="color:var(--danger);">⚠ 危険な操作</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px;">ブラウザに保存されている全ログデータを削除します。この操作は元に戻せません。</p>
+    <button onclick="deleteAllData()" style="width:100%;background:transparent;border:2px solid var(--danger);border-radius:var(--radius);color:var(--danger);font-size:17px;font-weight:700;padding:16px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+      全データを削除する
+    </button>
+  </div>
+
+  <!-- 上級者向け：GAS連携（折りたたみ） -->
+  <div class="card" style="border-color:var(--text2);">
+    <div onclick="toggleAdvanced()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;color:var(--text2);font-size:13px;">
+        ⚙ 上級者向け設定（Googleスプレッドシート連携）
+      </div>
+      <span id="advanced-arrow" style="color:var(--text2);font-size:18px;transition:transform 0.2s;">▶</span>
+    </div>
+    <div id="advanced-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7;">
+        GoogleスプレッドシートのGAS（Google Apps Script）と連携すると、交信ログをクラウドに自動保存できます。設定にはGASのデプロイ作業が必要です。
+      </p>
+      <!-- GAS URL設定 -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px;">クラウド保存先 URL</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;word-break:break-all;" id="gasurl-display">未設定（クラウド保存無効）</div>
+        <button onclick="openGasUrl()" style="width:100%;background:var(--surface2);border:2px solid var(--text2);border-radius:10px;color:var(--text2);font-size:14px;font-weight:700;padding:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">GAS URLを設定・変更する</button>
+      </div>
+      <!-- 未送信データ -->
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;">未送信データ</div>
+        <div class="pending-list" id="pending-list"></div>
+        <button class="btn-send-all" id="btn-send-all" onclick="sendAll()" style="display:none;">
+          ▲ まとめてクラウドに送信
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- フッター -->
+<div style="text-align:center;padding:20px 0 12px;border-top:1px solid var(--border);margin-top:8px;">
+  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text2);">JQ3JQO / KyotoDR120</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--border);margin-top:4px;">OPERATION LOG Ver.2.0 standalone</div>
+  <button onclick="openTerms()" style="margin-top:10px;background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;text-decoration:underline;font-family:'Noto Sans JP',sans-serif;">利用規約・免責事項</button>
+</div>
+
+<!-- 利用規約モーダル -->
+<div class="modal-overlay" id="terms-modal">
+  <div class="modal" style="max-height:80vh;overflow-y:auto;">
+    <h2>利用規約・免責事項</h2>
+    <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">1. 本アプリについて</p>
+      <p>本アプリ「OPERATION LOG」はフリーライセンス無線の運用ログ記録を目的として、JQ3JQO / KyotoDR120が個人で開発・無償配布するソフトウェアです。本アプリの使用にあたっては、以下の事項をご理解・ご同意の上でご利用ください。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">2. 無償提供について</p>
+      <p>本アプリは無償で提供されます。利用料金は一切発生しません。また、継続的な提供・機能の維持・改善を保証するものではありません。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">3. 禁止事項</p>
+      <p>以下の行為を禁止します。</p>
+      <p>・本アプリまたはそのソースコードを有償で販売・配布・提供すること。</p>
+      <p>・本アプリのソースコード・デザイン・機能を無断で複製し、別のサービスや製品として公開・配布すること。</p>
+      <p>・本アプリを改変した上で、制作者の許可なく第三者に配布・公開すること。</p>
+      <p>・本アプリを使用して違法行為・迷惑行為・他者への損害を与える行為を行うこと。</p>
+      <p>・本アプリを使用して取得したデータを、個人情報保護法その他関連法令に違反する形で取り扱うこと。</p>
+      <p>・本アプリのシステムに不正アクセスする行為、または本アプリの正常な運用を妨害する行為。</p>
+      <p>・本アプリを政治活動・宗教活動・特定のイデオロギーの宣伝等の目的に利用すること。</p>
+      <p>・本アプリを商業目的・営利目的で使用すること。ただし個人の運用ログ記録目的での使用は無償・自由とします。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">4. データに関する免責</p>
+      <p>本アプリを使用することによって生じたデータの損失・消失・破損・漏洩等について、制作者は一切の責任を負いません。大切なデータは定期的にバックアップ機能を使用して保存してください。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">5. 動作に関する免責</p>
+      <p>本アプリはすべての環境での動作を保証するものではありません。本アプリの使用・使用不能によって生じたいかなる損害についても、制作者は責任を負いません。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">6. 外部サービスに関する免責</p>
+      <p>本アプリはGoogle Apps Script・Googleスプレッドシート等の外部サービスと連携しています。これらの外部サービスの仕様変更・障害・サービス終了等によって本アプリが使用できなくなった場合についても、制作者は責任を負いません。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">7. 使用機器に関する免責</p>
+      <p>本アプリの使用によって生じたスマートフォン・タブレット・PC等の使用機器のトラブル・故障・損害について、制作者は一切の責任を負いません。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">8. 使用者の判断と責任</p>
+      <p>本アプリの使用はすべて使用者自身の判断と責任において行うものとします。本アプリを使用したことにより発生したいかなるトラブル・損害・不利益についても、制作者に責任が及ぶことはありません。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">9. 著作権について</p>
+      <p>本アプリのソースコード・デザイン・文章・構成等の著作権はすべてJQ3JQO / KyotoDR120に帰属します。著作権法により保護されており、無断転載・複製・引用は禁止します。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">10. 規約の変更について</p>
+      <p>本規約は予告なく変更される場合があります。変更後の規約は公開時点から適用されます。継続して本アプリを使用した場合は、変更後の規約に同意したものとみなします。</p>
+
+      <p style="font-weight:700;color:var(--accent2);margin:12px 0 4px;">11. 準拠法</p>
+      <p>本規約は日本法に準拠し、日本法に基づいて解釈されます。本アプリの使用に関して紛争が生じた場合は、制作者の所在地を管轄する裁判所を専属合意管轄とします。</p>
+
+      <p style="margin-top:16px;color:var(--text2);">JQ3JQO / KyotoDR120</p>
+    </div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-modal-ok" onclick="closeTerms()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ★ standalone版 TODO LIST【正式リリース前に対応すること】★
+//
+// [1] GAS URL検証の強化（saveGasUrl関数）※上級者向けセクション内
+//     現状は先頭文字列一致のみ。正規表現で厳密に検証する。
+//     /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/
+//
+// [2] エクスポート時の注意喚起（exportCSV / exportJSON関数）
+//     「ファイルのクラウド共有・他人への送付にご注意ください」
+//     ※HTMLには注意書き文言を既に追加済み。コード側のダイアログは任意。
+//
+// ============================================================
+
+// ===== ローマ字→ひらがな変換テーブル =====
+const ROMAJI_MAP = [
+  // 3文字
+  ['shi','し'],['chi','ち'],['tsu','つ'],['thi','ち'],['tsi','つ'],
+  ['dzi','ぢ'],['dzu','づ'],['shu','しゅ'],['sha','しゃ'],['sho','しょ'],
+  ['chu','ちゅ'],['cha','ちゃ'],['cho','ちょ'],['kya','きゃ'],['kyu','きゅ'],
+  ['kyo','きょ'],['nya','にゃ'],['nyu','にゅ'],['nyo','にょ'],['hya','ひゃ'],
+  ['hyu','ひゅ'],['hyo','ひょ'],['mya','みゃ'],['myu','みゅ'],['myo','みょ'],
+  ['rya','りゃ'],['ryu','りゅ'],['ryo','りょ'],['gya','ぎゃ'],['gyu','ぎゅ'],
+  ['gyo','ぎょ'],['bya','びゃ'],['byu','びゅ'],['byo','びょ'],['pya','ぴゃ'],
+  ['pyu','ぴゅ'],['pyo','ぴょ'],['tya','ちゃ'],['tyu','ちゅ'],['tyo','ちょ'],
+  // 2文字
+  ['ka','か'],['ki','き'],['ku','く'],['ke','け'],['ko','こ'],
+  ['sa','さ'],['si','し'],['su','す'],['se','せ'],['so','そ'],
+  ['ta','た'],['ti','ち'],['tu','つ'],['te','て'],['to','と'],
+  ['na','な'],['ni','に'],['nu','ぬ'],['ne','ね'],['no','の'],
+  ['ha','は'],['hi','ひ'],['hu','ふ'],['he','へ'],['ho','ほ'],
+  ['ma','ま'],['mi','み'],['mu','む'],['me','め'],['mo','も'],
+  ['ya','や'],['yu','ゆ'],['yo','よ'],
+  ['ra','ら'],['ri','り'],['ru','る'],['re','れ'],['ro','ろ'],
+  ['wa','わ'],['wi','ゐ'],['we','ゑ'],['wo','を'],
+  ['ga','が'],['gi','ぎ'],['gu','ぐ'],['ge','げ'],['go','ご'],
+  ['za','ざ'],['zi','じ'],['zu','ず'],['ze','ぜ'],['zo','ぞ'],
+  ['da','だ'],['di','ぢ'],['du','づ'],['de','で'],['do','ど'],
+  ['ba','ば'],['bi','び'],['bu','ぶ'],['be','べ'],['bo','ぼ'],
+  ['pa','ぱ'],['pi','ぴ'],['pu','ぷ'],['pe','ぺ'],['po','ぽ'],
+  ['fa','ふぁ'],['fu','ふ'],
+  ['ja','じゃ'],['ji','じ'],['ju','じゅ'],['je','じぇ'],['jo','じょ'],
+  // 1文字
+  ['a','あ'],['i','い'],['u','う'],['e','え'],['o','お'],
+  ['n','ん'],
+];
+
+// ===== 正規化：何が入力されても「ひらがな」に統一 =====
+function normalize(str) {
+  if (!str) return '';
+  let s = str.toLowerCase();
+
+  // カタカナ→ひらがな
+  s = s.replace(/[\u30A1-\u30F6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+
+  // ローマ字→ひらがな（長い順にマッチ）
+  let result = '';
+  let i = 0;
+  while (i < s.length) {
+    let matched = false;
+    for (const [rom, hira] of ROMAJI_MAP) {
+      if (s.startsWith(rom, i)) {
+        result += hira;
+        i += rom.length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      // ひらがなはそのまま、その他（英数字など）はそのまま
+      result += s[i];
+      i++;
+    }
+  }
+  return result;
+}
+
+// 全角英数字→半角に変換
+function toHankaku(str) {
+  return str
+    .replace(/[Ａ-Ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[ａ-ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+}
+
+// コールサインの地域部分だけ正規化（英字・数字は触らない）
+function normalizeCallsign(cs) {
+  // まず全角英数→半角に統一
+  const han = toHankaku(cs);
+  // 末尾の英字2文字+数字3桁を分離して地域部分だけひらがな正規化
+  const m = han.match(/^(.*?)([A-Za-z]{1,2})(\d{1,3})$/);
+  if (m) {
+    return normalize(m[1]) + m[2].toUpperCase() + m[3];
+  }
+  // 分離できない場合は全体を正規化（途中入力中）
+  return normalize(han);
+}
+
+// ===== ストレージ =====
+function getLogs() { return JSON.parse(localStorage.getItem('rc_logs') || '[]'); }
+function saveLogs(logs) { localStorage.setItem('rc_logs', JSON.stringify(logs)); }
+
+// コールサイン履歴（使用頻度順）
+function getHistory() {
+  const map = {};
+  getLogs().forEach(l => {
+    const key = l.cs;
+    if (!map[key]) map[key] = { cs: l.cs, csNorm: l.csNorm || l.cs, cat: l.cat, pref: l.pref, city: l.city, detail: l.detail, count: 0 };
+    map[key].count++;
+    map[key].cat = l.cat;
+    map[key].pref = l.pref;
+    map[key].city = l.city;
+    map[key].detail = l.detail || '';
+  });
+  return Object.values(map).sort((a, b) => b.count - a.count);
+}
+
+// ===== 都道府県リスト（一元管理）=====
+const PREFS = [
+  '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
+  '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
+  '新潟県','富山県','石川県','福井県','山梨県','長野県',
+  '岐阜県','静岡県','愛知県','三重県',
+  '滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県',
+  '鳥取県','島根県','岡山県','広島県','山口県',
+  '徳島県','香川県','愛媛県','高知県',
+  '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県',
+  '台湾'
+];
+
+function buildPrefOptions(selectId, selectedVal) {
+  const el = document.getElementById(selectId);
+
+  // 過去ログから都道府県の使用頻度を集計
+  const freq = {};
+  getLogs().forEach(l => {
+    if (l.pref) freq[l.pref] = (freq[l.pref] || 0) + 1;
+  });
+
+  // 使用頻度上位5件を抽出（1回以上使ったもの）
+  const top = Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([p]) => p);
+
+  // 残りは通常順
+  const rest = PREFS.filter(p => !top.includes(p));
+
+  let html = '<option value="">選択してください</option>';
+
+  // よく使う都道府県（上位に表示）
+  if (top.length > 0) {
+    html += '<optgroup label="よく使う">';
+    html += top.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+    html += '</optgroup>';
+    html += '<optgroup label="すべて">';
+    html += PREFS.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+    html += '</optgroup>';
+  } else {
+    html += PREFS.map(p => `<option${p === selectedVal ? ' selected' : ''}>${p}</option>`).join('');
+  }
+
+  el.innerHTML = html;
+}
+function getMyQTH() { return JSON.parse(localStorage.getItem('my_qth') || 'null'); }
+function saveMyQTH() {
+  const pref   = document.getElementById('my-pref').value;
+  const city   = document.getElementById('my-city').value.trim();
+  const detail = document.getElementById('my-detail').value.trim();
+  if (!pref) { alert('都道府県を入力してください'); return; }
+  const qth = { pref, city, detail };
+  localStorage.setItem('my_qth', JSON.stringify(qth));
+  closeMyQTH();
+  renderMyQTH();
+}
+function openMyQTH() {
+  const qth = getMyQTH();
+  buildPrefOptions('my-pref', qth ? qth.pref : '');
+  if (qth) {
+    document.getElementById('my-city').value = qth.city;
+    document.getElementById('my-detail').value = qth.detail || '';
+  }
+  document.getElementById('myqth-modal').classList.add('show');
+}
+function closeMyQTH() {
+  document.getElementById('myqth-modal').classList.remove('show');
+}
+function renderMyQTH() {
+  const qth = getMyQTH();
+  const el = document.getElementById('myqth-display');
+  if (!qth) {
+    el.innerHTML = '<span class="empty">タップして運用地を設定</span>';
+  } else {
+    const parts = [qth.pref, qth.city, qth.detail].filter(Boolean).join(' ');
+    el.innerHTML = `<span>${parts}</span>`;
+  }
+}
+
+// ===== 状態 =====
+const state = { cat: '', rstRx: '', rstTx: '', rstCbl: false, tokushoMode: '', dcrPower: '' };
+
+// ===== 初期化 =====
+function init() {
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('header-date').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+  renderMyQTH();
+  buildPrefOptions('qth-pref', '');
+  buildPrefOptions('my-pref', '');
+  renderGasUrlDisplay();
+  // standalone版：GASモーダルは表示しない。自局QTHのみ初回に聞く。
+  if (!getMyQTH()) setTimeout(openMyQTH, 400);
+  updateCounter();
+  checkOnline();
+}
+
+// 上級者向けセクションの折りたたみ
+function toggleAdvanced() {
+  const section = document.getElementById('advanced-section');
+  const arrow   = document.getElementById('advanced-arrow');
+  const isOpen  = section.style.display !== 'none';
+  section.style.display = isOpen ? 'none' : 'block';
+  arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
+  if (!isOpen) renderPending(); // 開いたときだけ未送信リストを描画
+}
+
+function updateCounter() {
+  const today = new Date().toLocaleDateString('ja-JP');
+  const todayCount = getLogs().filter(l => new Date(l.ts).toLocaleDateString('ja-JP') === today).length;
+  document.getElementById('count').textContent = todayCount;
+  // standalone版：入力タブに未送信表示なし
+}
+
+// ===== コールサイン入力・サジェスト =====
+function onCallsignInput() {
+  const raw = document.getElementById('callsign').value.trim();
+  const list = document.getElementById('suggest-list');
+
+  if (!raw) { list.classList.remove('show'); return; }
+
+  const normInput = normalizeCallsign(raw);
+  const history = getHistory();
+
+  const filtered = history.filter(h => {
+    const normH = h.csNorm || h.cs;
+    return normH.startsWith(normInput) || h.cs.toLowerCase().startsWith(raw.toLowerCase());
+  }).slice(0, 7);
+
+  if (filtered.length === 0) { list.classList.remove('show'); return; }
+
+  // candidatesをウィンドウ変数に保存してインデックスで参照
+  window._suggestCandidates = filtered;
+  list.innerHTML = filtered.map((h, idx) => {
+    const cs = h.cs;
+    const matchLen = Math.min(raw.length, cs.length);
+    const hi = `<span class="hi">${cs.slice(0, matchLen)}</span>${cs.slice(matchLen)}`;
+    return `<div class="suggest-item" onclick="applySuggest(${idx})">
+      <span class="suggest-cs">${hi}</span>
+      <span class="suggest-meta">${h.cat} / ${h.count}回 / ${h.pref}${h.city}</span>
+    </div>`;
+  }).join('');
+  list.classList.add('show');
+}
+
+function applySuggest(idx) {
+  const h = window._suggestCandidates[idx];
+  if (!h) return;
+  document.getElementById('callsign').value = h.cs;
+  document.getElementById('suggest-list').classList.remove('show');
+  // 種別・QTHも自動セット
+  const catBtn = document.querySelector(`.btn-cat[data-cat="${h.cat}"]`);
+  if (catBtn) selectCat(catBtn);
+  if (h.pref) document.getElementById('qth-pref').value = h.pref;
+  if (h.city) document.getElementById('qth-city').value = h.city;
+  if (h.detail) document.getElementById('qth-detail').value = h.detail || '';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.suggest-wrap')) {
+    document.getElementById('suggest-list').classList.remove('show');
+  }
+});
+
+// ===== 選択 =====
+function selectCat(btn) {
+  document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.cat = btn.dataset.cat;
+
+  // 特小選択時だけ交信方法カードを表示
+  const tokushoCard = document.getElementById('tokusho-mode-card');
+  if (state.cat === '特小') {
+    tokushoCard.style.display = 'block';
+  } else {
+    tokushoCard.style.display = 'none';
+    state.tokushoMode = '';
+    document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
+  }
+
+  // DCR選択時だけ出力カードを表示
+  const dcrCard = document.getElementById('dcr-power-card');
+  if (state.cat === 'DCR') {
+    dcrCard.style.display = 'block';
+  } else {
+    dcrCard.style.display = 'none';
+    state.dcrPower = '';
+    document.querySelectorAll('#dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
+  }
+
+  // LCR選択時だけ距離カードを表示
+  const lcrCard = document.getElementById('lcr-distance-card');
+  if (state.cat === 'LCR') {
+    lcrCard.style.display = 'block';
+  } else {
+    lcrCard.style.display = 'none';
+    document.getElementById('lcr-distance').value = '';
+  }
+}
+
+function selectTokushoMode(btn) {
+  document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.tokushoMode = btn.dataset.mode;
+  // レピーター選択時のみ名前入力欄を表示
+  const row = document.getElementById('repeater-name-row');
+  if (state.tokushoMode === 'レピーター') {
+    row.style.display = 'block';
+  } else {
+    row.style.display = 'none';
+    document.getElementById('repeater-name').value = '';
+  }
+}
+
+function selectDcrPower(btn) {
+  document.querySelectorAll('#dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.dcrPower = btn.dataset.power;
+}
+
+function selectRst(type, btn) {
+  const val = btn.dataset.val;
+
+  if (type === 'rx' && val === 'CBL') {
+    if (state.rstRx === 'M5') return;
+    state.rstCbl = !state.rstCbl;
+    btn.classList.toggle('active', state.rstCbl);
+    return;
+  }
+
+  if (type === 'tx') {
+    const alreadyActive = btn.classList.contains('active');
+    document.querySelectorAll('#rst-tx .btn-rst, #rst-tx-2 .btn-rst').forEach(b => b.classList.remove('active'));
+    if (!alreadyActive) {
+      btn.classList.add('active');
+      state.rstTx = val;
+    } else {
+      state.rstTx = '';
+    }
+    document.getElementById('rst-tx-free').value = '';
+  } else {
+    const alreadyActive = btn.classList.contains('active');
+    document.querySelectorAll('#rst-rx .btn-rst:not([data-val="CBL"]), #rst-rx-2 .btn-rst:not([data-val="CBL"])').forEach(b => b.classList.remove('active'));
+    if (!alreadyActive) {
+      btn.classList.add('active');
+      state.rstRx = val;
+      if (val === 'M5' && state.rstCbl) {
+        state.rstCbl = false;
+        document.querySelector('#rst-rx-2 .btn-rst[data-val="CBL"]').classList.remove('active');
+      }
+    } else {
+      state.rstRx = '';
+    }
+    document.getElementById('rst-rx-free').value = '';
+  }
+}
+
+function onRstFreeInput(type, el) {
+  if (type === 'tx') {
+    document.querySelectorAll('#rst-tx .btn-rst, #rst-tx-2 .btn-rst').forEach(b => b.classList.remove('active'));
+    state.rstTx = el.value;
+  } else {
+    document.querySelectorAll('#rst-rx .btn-rst:not([data-val="CBL"]), #rst-rx-2 .btn-rst:not([data-val="CBL"])').forEach(b => b.classList.remove('active'));
+    state.rstRx = el.value;
+  }
+}
+
+// ===== 記録する =====
+function submitLog() {
+  const submitBtn = document.getElementById('btn-submit');
+  if (submitBtn.disabled) return;
+  submitBtn.disabled = true;
+  submitBtn.textContent = '記録中…';
+  submitBtn.style.opacity = '0.5';
+  const csRaw  = document.getElementById('callsign').value.trim();
+  const cs     = normalizeCallsign(csRaw); // 保存前に正規化（全角→半角・ひらがな統一）
+  const portable = document.getElementById('portable').value.trim();
+  const csDisplay = portable ? `${cs}/${portable}` : cs;
+  const pref  = document.getElementById('qth-pref').value;
+  const city  = document.getElementById('qth-city').value.trim();
+  const detail = document.getElementById('qth-detail').value.trim();
+
+  if (!state.cat)  { alert('トランシーバーを選択してください'); return; }
+  if (!cs)         { alert('コールサインを入力してください'); return; }
+  if (!pref)       { alert('都道府県を選択してください'); return; }
+  // CBL選択時は送信レポート不要、それ以外はどちらか入力があればOK
+  const rstRxVal = state.rstRx + (state.rstCbl ? 'CBL' : '');
+  const rstTxVal = state.rstCbl ? '' : state.rstTx;
+
+  const myQTH = getMyQTH();
+  const log = {
+    id: Date.now(),
+    ts: new Date().toISOString(),
+    cat: state.cat,
+    tokushoMode: state.tokushoMode || '',
+    repeaterName: state.tokushoMode === 'レピーター' ? (document.getElementById('repeater-name').value.trim() || '') : '',
+    dcrPower: state.dcrPower || '',
+    lcrDistance: state.cat === 'LCR' ? (document.getElementById('lcr-distance').value.trim() || '') : '',
+    cs: csDisplay,
+    csBase: cs,
+    csNorm: normalizeCallsign(cs),
+    portable: portable,
+    rstRx: rstRxVal,
+    rstTx: rstTxVal,
+    pref, city, detail,
+    myPref:   myQTH ? myQTH.pref   : '',
+    myCity:   myQTH ? myQTH.city   : '',
+    myDetail: myQTH ? myQTH.detail : '',
+    memo: document.getElementById('memo').value.trim() || '',
+    sent: false
+  };
+
+  const logs = getLogs();
+  logs.push(log);
+  saveLogs(logs);
+
+  // ボタンを消す→1.5秒後に復活
+  submitBtn.style.display = 'none';
+  setTimeout(() => {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '記録する';
+    submitBtn.style.opacity = '1';
+    submitBtn.style.display = 'block';
+  }, 1500);
+
+  // フラッシュ
+  const flash = document.getElementById('flash');
+  flash.textContent = `✓  ${csDisplay}  を記録しました`;
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 2000);
+
+  // リセット（種別は保持）
+  document.getElementById('callsign').value = '';
+  document.getElementById('portable').value = '';
+  document.getElementById('qth-pref').value = '';
+  document.getElementById('qth-city').value = '';
+  document.getElementById('qth-detail').value = '';
+  document.querySelectorAll('.btn-rst').forEach(b => b.classList.remove('active'));
+  document.getElementById('rst-tx-free').value = '';
+  document.getElementById('rst-rx-free').value = '';
+  state.rstRx = '';
+  state.rstTx = '';
+  state.rstCbl = false;
+  state.tokushoMode = '';
+  state.dcrPower = '';
+  document.querySelectorAll('#tokusho-mode-card .btn-cat, #dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
+  if (document.getElementById('lcr-distance')) document.getElementById('lcr-distance').value = '';
+  if (document.getElementById('repeater-name')) document.getElementById('repeater-name').value = '';
+  if (document.getElementById('repeater-name-row')) document.getElementById('repeater-name-row').style.display = 'none';
+  document.getElementById('memo').value = '';
+
+  updateCounter();
+  buildPrefOptions('qth-pref', '');
+  document.getElementById('callsign').focus();
+}
+
+// ===== タブ =====
+function switchTab(tab, btn) {
+  document.querySelectorAll('.nav-btn').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  // standalone版：GAS未送信リストは折りたたみ内で管理するため、ここでは描画しない
+  if (tab === 'log') renderLog();
+}
+
+function renderLog() {
+  const logs = [...getLogs()].reverse();
+  const list = document.getElementById('log-list');
+  const total = document.getElementById('log-total');
+  total.textContent = `全${logs.length}件`;
+
+  // ===== デイリーサマリー生成 =====
+  const today = new Date().toLocaleDateString('ja-JP');
+  const todayLogs = [...getLogs()].filter(l =>
+    new Date(l.ts).toLocaleDateString('ja-JP') === today
+  );
+
+  const CAT_ORDER = ['DCR', 'LCR', '特小', 'CB'];
+  let dailyText = '';
+
+  if (todayLogs.length === 0) {
+    dailyText = '本日の記録はありません';
+  } else {
+    const groups = {};
+    todayLogs.forEach(l => {
+      const cat = l.cat || 'その他';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(l);
+    });
+
+    const orderedCats = [
+      ...CAT_ORDER.filter(c => groups[c]),
+      ...Object.keys(groups).filter(c => !CAT_ORDER.includes(c))
+    ];
+
+    orderedCats.forEach(cat => {
+      dailyText += `${cat}\n`;
+
+      if (cat === '特小') {
+        // 単信とレピーター別に分類
+        const tansin = groups[cat].filter(l => l.tokushoMode !== 'レピーター');
+        const repeater = groups[cat].filter(l => l.tokushoMode === 'レピーター');
+
+        if (tansin.length > 0) {
+          dailyText += `　単信\n`;
+          tansin.forEach(l => {
+            const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+            dailyText += `　　${l.cs}　${rst}\n`;
+          });
+        }
+
+        if (repeater.length > 0) {
+          // レピーター名でさらにグループ化
+          const repGroups = {};
+          repeater.forEach(l => {
+            const name = l.repeaterName || 'レピーター';
+            if (!repGroups[name]) repGroups[name] = [];
+            repGroups[name].push(l);
+          });
+          Object.entries(repGroups).forEach(([name, logs]) => {
+            dailyText += `　${name}\n`;
+            logs.forEach(l => {
+              const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+              dailyText += `　　${l.cs}　${rst}\n`;
+            });
+          });
+        }
+
+      } else if (cat === 'CB') {
+        // 交信成立とCBLに分類
+        const qso = groups[cat].filter(l => !String(l.rstRx).includes('CBL'));
+        const cbl = groups[cat].filter(l => String(l.rstRx).includes('CBL'));
+
+        if (qso.length > 0) {
+          qso.forEach(l => {
+            const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+            dailyText += `　${l.cs}　${rst}\n`;
+          });
+        }
+
+        if (cbl.length > 0) {
+          dailyText += `　CBL\n`;
+          cbl.forEach(l => {
+            dailyText += `　　${l.cs}　${l.rstRx}\n`;
+          });
+        }
+
+      } else {
+        // DCR・LCRなど通常
+        groups[cat].forEach(l => {
+          const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+          dailyText += `　${l.cs}　${rst}\n`;
+        });
+      }
+    });
+  }
+
+  document.getElementById('daily-text').textContent = dailyText.trim();
+
+  // ===== 全ログ一覧 =====
+  if (logs.length === 0) {
+    list.innerHTML = '<div class="empty-msg">記録がありません</div>';
+    return;
+  }
+
+  list.innerHTML = logs.map(l => {
+    const d = new Date(l.ts);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+    const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+    const cs = l.cs || '';
+    return `<div class="log-item">
+      <div class="log-item-top">
+        <span class="log-cat">${l.cat || ''}</span>
+        <span class="log-cs">${cs}</span>
+        <span class="log-rst">${rst}</span>
+      </div>
+      <div class="log-item-bottom">
+        <span class="log-qth">${qth}</span>
+        <span class="log-time">${dateStr}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let searchCat = '全て';
+
+function selectSearchCat(btn) {
+  document.querySelectorAll('#search-cat-btns .btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  searchCat = btn.dataset.cat;
+  searchByDate();
+}
+
+function searchByCs() {
+  const query = normalizeCallsign(document.getElementById('search-cs').value.trim());
+  const resultList = document.getElementById('search-result-list');
+  const countEl = document.getElementById('search-cs-count');
+
+  if (!query) {
+    resultList.innerHTML = '';
+    countEl.style.display = 'none';
+    return;
+  }
+
+  const results = getLogs().filter(l => {
+    const csNorm = l.csNorm || normalizeCallsign(l.cs || '');
+    return csNorm.includes(query) || (l.cs || '').toLowerCase().includes(query.toLowerCase());
+  }).reverse();
+
+  countEl.style.display = 'block';
+  countEl.textContent = `${results.length}件`;
+
+  if (results.length === 0) {
+    resultList.innerHTML = '<div class="empty-msg">該当なし</div>';
+    return;
+  }
+
+  resultList.innerHTML = results.map(l => {
+    const d = new Date(l.ts);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+    const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+    const myqth = [l.myPref, l.myCity, l.myDetail].filter(Boolean).join(' ');
+    return `<div class="search-item">
+      <span class="search-cs2">${l.cs||''}</span>
+      <span class="search-qth2">${qth}</span>
+      <span class="search-rst2">${rst}</span>
+      <span class="search-time2">${dateStr}</span>
+      ${myqth ? `<span class="search-myqth2">自局：${myqth}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function searchByDate() {
+  const month = document.getElementById('search-month').value;
+  const resultList = document.getElementById('search-result-date-list');
+  const countEl = document.getElementById('search-date-count');
+
+  if (!month) {
+    resultList.innerHTML = '';
+    countEl.style.display = 'none';
+    return;
+  }
+
+  const [year, mon] = month.split('-').map(Number);
+  let results = getLogs().filter(l => {
+    const d = new Date(l.ts);
+    return d.getFullYear() === year && d.getMonth() + 1 === mon;
+  });
+
+  if (searchCat !== '全て') {
+    results = results.filter(l => l.cat === searchCat);
+  }
+
+  countEl.style.display = 'block';
+  countEl.textContent = `${year}年${mon}月 ${searchCat !== '全て' ? searchCat + ' ' : ''}${results.length}件`;
+
+  if (results.length === 0) {
+    resultList.innerHTML = '<div class="empty-msg">該当なし</div>';
+    return;
+  }
+
+  const CAT_ORDER = ['DCR', 'LCR', '特小', 'CB'];
+  const groups = {};
+  results.forEach(l => {
+    const cat = l.cat || 'その他';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(l);
+  });
+  const orderedCats = [
+    ...CAT_ORDER.filter(c => groups[c]),
+    ...Object.keys(groups).filter(c => !CAT_ORDER.includes(c))
+  ];
+
+  resultList.innerHTML = orderedCats.map(cat => {
+    const items = groups[cat].map(l => {
+      const d = new Date(l.ts);
+      const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+      const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
+      const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+      const myqth = [l.myPref, l.myCity, l.myDetail].filter(Boolean).join(' ');
+      return `<div class="search-item">
+        <span class="search-time2">${dateStr}</span>
+        <span class="search-cs2">${l.cs||''}</span>
+        <span class="search-qth2">${qth}</span>
+        <span class="search-rst2">${rst}</span>
+        ${myqth ? `<span class="search-myqth2">自局：${myqth}</span>` : ''}
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;color:var(--accent2);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:4px;">${cat}</div>
+      ${items}
+    </div>`;
+  }).join('');
+}
+
+function clearSearch(type) {
+  if (type === 'cs') {
+    document.getElementById('search-cs').value = '';
+    searchByCs();
+  } else {
+    document.getElementById('search-month').value = '';
+    searchByDate();
+  }
+}
+
+function copyDaily() {
+  const text = document.getElementById('daily-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ コピー完了';
+    setTimeout(() => btn.textContent = 'コピー', 2000);
+  }).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    const btn = event.target;
+    btn.textContent = '✓ コピー完了';
+    setTimeout(() => btn.textContent = 'コピー', 2000);
+  });
+}
+// standalone版：入力タブに未送信インライン表示なし（関数は無効化）
+// function updatePendingInline() { ... }
+
+// ===== エクスポート =====
+function exportCSV() {
+  const logs = getLogs();
+  if (logs.length === 0) { alert('記録がありません'); return; }
+  const headers = ['No','日時','種別','DCR出力','特小交信方法','特小レピーター名','LCR距離(km)','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細','メモ'];
+  const rows = logs.map((l, i) => [
+    i + 1,
+    new Date(l.ts).toLocaleString('ja-JP'),
+    l.cat || '',
+    l.dcrPower || '',
+    l.tokushoMode || '',
+    l.repeaterName || '',
+    l.lcrDistance || '',
+    l.csBase || l.cs || '',
+    l.portable || '',
+    l.rstTx || '',
+    l.rstRx || '',
+    l.pref || '',
+    l.city || '',
+    l.detail || '',
+    l.myPref || '',
+    l.myCity || '',
+    l.myDetail || '',
+    l.memo || ''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const bom = '\uFEFF';
+  downloadFile(bom + csv, `oplog_${dateStr()}.csv`, 'text/csv');
+}
+
+function exportJSON() {
+  const logs = getLogs();
+  if (logs.length === 0) { alert('記録がありません'); return; }
+  downloadFile(JSON.stringify(logs, null, 2), `oplog_backup_${dateStr()}.json`, 'application/json');
+}
+
+function downloadTemplate() {
+  const headers = ['No','日時','種別','DCR出力','特小交信方法','特小レピーター名','LCR距離(km)','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細','メモ'];
+  const bom = '\uFEFF';
+  downloadFile(bom + headers.map(h => `"${h}"`).join(',') + '\n', 'oplog_template.csv', 'text/csv');
+}
+
+function downloadFile(content, filename, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function dateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ===== インポート =====
+function importCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target.result.replace(/^\uFEFF/, '');
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) { alert('データがありません'); return; }
+    const rows = lines.slice(1);
+    const newLogs = rows.map(row => {
+      const cols = row.split(',').map(c => c.replace(/^"|"$/g,'').replace(/""/g,'"'));
+      return {
+        id: Date.now() + Math.random(),
+        ts: new Date(cols[1] || Date.now()).toISOString(),
+        cat: cols[2] || '',
+        tokushoMode: cols[3] || '',
+        cs: (cols[4] || '') + (cols[5] ? '/' + cols[5] : ''),
+        csBase: cols[4] || '',
+        portable: cols[5] || '',
+        rstTx: cols[6] || '',
+        rstRx: cols[7] || '',
+        pref: cols[8] || '',
+        city: cols[9] || '',
+        detail: cols[10] || '',
+        myPref: cols[11] || '',
+        myCity: cols[12] || '',
+        myDetail: cols[13] || '',
+        sent: true
+      };
+    });
+    const choice = confirm(`${newLogs.length}件のデータを取り込みます。\nOK→既存データに追加\nキャンセル→既存データを上書き`);
+    const existing = choice ? getLogs() : [];
+    saveLogs([...existing, ...newLogs]);
+    updateCounter();
+    alert(`${newLogs.length}件を取り込みました`);
+    e.target.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const newLogs = JSON.parse(ev.target.result);
+      if (!Array.isArray(newLogs)) { alert('正しいバックアップファイルではありません'); return; }
+      const choice = confirm(`${newLogs.length}件のデータを取り込みます。\nOK→既存データに追加\nキャンセル→既存データを上書き`);
+      const existing = choice ? getLogs() : [];
+      saveLogs([...existing, ...newLogs]);
+      updateCounter();
+      alert(`${newLogs.length}件を取り込みました`);
+      e.target.value = '';
+    } catch {
+      alert('ファイルの読み込みに失敗しました');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ===== 未送信 =====
+function renderPending() {
+  const pending = getLogs().filter(l => !l.sent);
+  const list = document.getElementById('pending-list');
+  const btn  = document.getElementById('btn-send-all');
+  if (pending.length === 0) {
+    list.innerHTML = '<div class="empty-msg">未送信のデータはありません</div>';
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'block';
+  list.innerHTML = pending.map(l => {
+    const d = new Date(l.ts);
+    const time = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
+    return `<div class="pending-item">
+      <div>
+        <span style="color:var(--accent2);font-weight:700;">${l.cs}</span>
+        <span style="color:var(--text2);font-size:11px;margin-left:6px;">[${l.cat}] ${l.rstRx}/${l.rstTx}</span>
+        <div class="meta">${qth}</div>
+      </div>
+      <div style="color:var(--text2);font-size:11px;">${time}</div>
+    </div>`;
+  }).join('');
+}
+
+function getGasUrl() {
+  return localStorage.getItem('gas_url') || '';
+}
+
+function openGasUrl() {
+  document.getElementById('gas-url-input').value = getGasUrl();
+  document.getElementById('gasurl-modal').classList.add('show');
+}
+
+function saveGasUrl() {
+  const url = document.getElementById('gas-url-input').value.trim();
+  if (url && !url.startsWith('https://script.google.com/')) {
+    alert('正しいGAS URLを入力してください');
+    return;
+  }
+  localStorage.setItem('gas_url', url);
+  document.getElementById('gasurl-modal').classList.remove('show');
+  renderGasUrlDisplay();
+}
+
+function skipGasUrl() {
+  localStorage.setItem('gas_url', '');
+  document.getElementById('gasurl-modal').classList.remove('show');
+  renderGasUrlDisplay();
+}
+
+function renderGasUrlDisplay() {
+  const url = getGasUrl();
+  const el = document.getElementById('gasurl-display');
+  if (url) {
+    el.textContent = url;
+    el.style.color = 'var(--accent)';
+  } else {
+    el.textContent = '未設定（クラウド保存無効）';
+    el.style.color = 'var(--text2)';
+  }
+}
+
+const GAS_URL = getGasUrl();
+
+async function sendAll() {
+  const gasUrl = getGasUrl();
+  if (!gasUrl) {
+    alert('GASのURLが設定されていません。\nデータ管理タブで設定してください。');
+    return;
+  }
+  const logs = getLogs();
+  const pending = logs.filter(l => !l.sent);
+  if (pending.length === 0) return;
+
+  const btn = document.getElementById('btn-send-all');
+  // standalone版：入力タブに未送信ボタンなし
+
+  // ボタンを消す
+  btn.style.display = 'none';
+
+  let successCount = 0;
+  const updatedLogs = [...logs];
+
+  for (const log of pending) {
+    try {
+      await fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(log),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const idx = updatedLogs.findIndex(l => l.id === log.id);
+      if (idx !== -1) updatedLogs[idx] = { ...updatedLogs[idx], sent: true };
+      successCount++;
+    } catch(e) {
+      console.error('送信失敗:', e);
+    }
+  }
+
+  saveLogs(updatedLogs);
+
+  // 送信完了→ボタン復活
+  btn.style.display = 'block';
+
+  if (successCount === pending.length) {
+    alert(`✓ ${successCount}件をスプレッドシートに記録しました`);
+  } else {
+    alert(`${successCount}件成功 / ${pending.length - successCount}件失敗\n失敗分は次回再送されます`);
+  }
+
+  renderPending();
+  updateCounter();
+}
+
+function deleteAllData() {
+  const count = getLogs().length;
+  if (count === 0) { alert('削除するデータがありません'); return; }
+  const step1 = confirm(`⚠ 警告\n\nブラウザ内の全ログ（${count}件）を削除します。\nこの操作は元に戻せません。\n\n本当に削除しますか？`);
+  if (!step1) return;
+  const step2 = confirm('最終確認\n\n本当に全データを削除しますか？\nバックアップはお済みですか？');
+  if (!step2) return;
+  localStorage.removeItem('rc_logs');
+  updateCounter();
+  renderPending();
+  alert('全データを削除しました');
+}
+
+function openTerms() {
+  document.getElementById('terms-modal').classList.add('show');
+}
+function closeTerms() {
+  document.getElementById('terms-modal').classList.remove('show');
+}
+
+function checkOnline() {
+  document.getElementById('offline-badge').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', checkOnline);
+window.addEventListener('offline', checkOnline);
+
+init();
+
+// Service Worker登録（PWA・オフライン対応）
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/operation-log/service-worker.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
