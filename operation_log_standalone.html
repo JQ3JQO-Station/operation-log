@@ -433,6 +433,18 @@
     </div>
   </div>
 
+  <!-- 交信日時 -->
+  <div class="card">
+    <div class="card-label">交信日時</div>
+    <input type="datetime-local" id="log-datetime"
+      style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+             color:var(--text);font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;
+             padding:14px;outline:none;color-scheme:dark;"
+      onfocus="this.style.borderColor='var(--accent2)'"
+      onblur="this.style.borderColor='var(--border)'"/>
+    <p style="font-size:11px;color:var(--text2);margin-top:6px;">※ 現在時刻を自動セット。過去ログ入力時は修正してください。</p>
+  </div>
+
   <!-- メモ -->
   <div class="card">
     <div class="card-label">メモ（任意）</div>
@@ -846,6 +858,7 @@ function init() {
   renderGasUrlDisplay();
   // standalone版：GASモーダルは表示しない。自局QTHのみ初回に聞く。
   if (!getMyQTH()) setTimeout(openMyQTH, 400);
+  setNowDatetime(); // 日時欄に現在時刻をセット
   updateCounter();
   checkOnline();
 }
@@ -1035,17 +1048,21 @@ function submitLog() {
   const city  = document.getElementById('qth-city').value.trim();
   const detail = document.getElementById('qth-detail').value.trim();
 
-  if (!state.cat)  { alert('トランシーバーを選択してください'); return; }
-  if (!cs)         { alert('コールサインを入力してください'); return; }
-  if (!pref)       { alert('都道府県を選択してください'); return; }
+  if (!state.cat)  { alert('トランシーバーを選択してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
+  if (!cs)         { alert('コールサインを入力してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
+  if (!pref)       { alert('都道府県を選択してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
   // CBL選択時は送信レポート不要、それ以外はどちらか入力があればOK
   const rstRxVal = state.rstRx + (state.rstCbl ? 'CBL' : '');
   const rstTxVal = state.rstCbl ? '' : state.rstTx;
 
+  // 交信日時：手動入力欄の値を使用、未入力なら現在時刻
+  const dtVal = document.getElementById('log-datetime').value;
+  const logTs = dtVal ? new Date(dtVal).toISOString() : new Date().toISOString();
+
   const myQTH = getMyQTH();
   const log = {
     id: Date.now(),
-    ts: new Date().toISOString(),
+    ts: logTs,
     cat: state.cat,
     tokushoMode: state.tokushoMode || '',
     repeaterName: state.tokushoMode === 'レピーター' ? (document.getElementById('repeater-name').value.trim() || '') : '',
@@ -1103,10 +1120,23 @@ function submitLog() {
   if (document.getElementById('repeater-name')) document.getElementById('repeater-name').value = '';
   if (document.getElementById('repeater-name-row')) document.getElementById('repeater-name-row').style.display = 'none';
   document.getElementById('memo').value = '';
+  setNowDatetime(); // 日時欄を現在時刻にリセット
 
   updateCounter();
   buildPrefOptions('qth-pref', '');
   document.getElementById('callsign').focus();
+}
+
+// 日時欄に現在時刻をセットするヘルパー
+function setNowDatetime() {
+  const now = new Date();
+  // datetime-local の値は "YYYY-MM-DDTHH:MM" 形式
+  const y  = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d  = String(now.getDate()).padStart(2, '0');
+  const h  = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('log-datetime').value = `${y}-${mo}-${d}T${h}:${mi}`;
 }
 
 // ===== タブ =====

@@ -431,6 +431,18 @@
     </div>
   </div>
 
+  <!-- 交信日時 -->
+  <div class="card">
+    <div class="card-label">交信日時</div>
+    <input type="datetime-local" id="log-datetime"
+      style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+             color:var(--text);font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;
+             padding:14px;outline:none;color-scheme:dark;"
+      onfocus="this.style.borderColor='var(--accent2)'"
+      onblur="this.style.borderColor='var(--border)'"/>
+    <p style="font-size:11px;color:var(--text2);margin-top:6px;">※ 現在時刻を自動セット。過去ログ入力時は修正してください。</p>
+  </div>
+
   <!-- メモ -->
   <div class="card">
     <div class="card-label">メモ（任意）</div>
@@ -623,19 +635,6 @@
 </div>
 
 <script>
-// ============================================================
-// ★ TODO LIST【正式リリース前に対応すること】★
-//
-// [1] GAS URL検証の強化（saveGasUrl関数）
-//     現状は先頭文字列一致のみ。正規表現で厳密に検証する。
-//     /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/
-//
-// [2] エクスポート時の注意喚起（exportCSV / exportJSON関数）
-//     「ファイルのクラウド共有・他人への送付にご注意ください」
-//     という警告ダイアログをダウンロード前に表示する。
-//
-// ============================================================
-
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
   // 3文字
@@ -839,6 +838,7 @@ function init() {
   }
   // 未設定なら自局QTHモーダルを開く
   if (!getMyQTH()) setTimeout(openMyQTH, 400);
+  setNowDatetime(); // 日時欄に現在時刻をセット
   updateCounter();
   checkOnline();
 }
@@ -1011,24 +1011,27 @@ function submitLog() {
   submitBtn.textContent = '記録中…';
   submitBtn.style.opacity = '0.5';
   const csRaw  = document.getElementById('callsign').value.trim();
-  const cs     = normalizeCallsign(csRaw); // 保存前に正規化（全角→半角・ひらがな統一）
+  const cs     = normalizeCallsign(csRaw);
   const portable = document.getElementById('portable').value.trim();
   const csDisplay = portable ? `${cs}/${portable}` : cs;
   const pref  = document.getElementById('qth-pref').value;
   const city  = document.getElementById('qth-city').value.trim();
   const detail = document.getElementById('qth-detail').value.trim();
 
-  if (!state.cat)  { alert('トランシーバーを選択してください'); return; }
-  if (!cs)         { alert('コールサインを入力してください'); return; }
-  if (!pref)       { alert('都道府県を選択してください'); return; }
-  // CBL選択時は送信レポート不要、それ以外はどちらか入力があればOK
+  if (!state.cat)  { alert('トランシーバーを選択してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
+  if (!cs)         { alert('コールサインを入力してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
+  if (!pref)       { alert('都道府県を選択してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
   const rstRxVal = state.rstRx + (state.rstCbl ? 'CBL' : '');
   const rstTxVal = state.rstCbl ? '' : state.rstTx;
+
+  // 交信日時：手動入力欄の値を使用、未入力なら現在時刻
+  const dtVal = document.getElementById('log-datetime').value;
+  const logTs = dtVal ? new Date(dtVal).toISOString() : new Date().toISOString();
 
   const myQTH = getMyQTH();
   const log = {
     id: Date.now(),
-    ts: new Date().toISOString(),
+    ts: logTs,
     cat: state.cat,
     tokushoMode: state.tokushoMode || '',
     repeaterName: state.tokushoMode === 'レピーター' ? (document.getElementById('repeater-name').value.trim() || '') : '',
@@ -1086,10 +1089,22 @@ function submitLog() {
   if (document.getElementById('repeater-name')) document.getElementById('repeater-name').value = '';
   if (document.getElementById('repeater-name-row')) document.getElementById('repeater-name-row').style.display = 'none';
   document.getElementById('memo').value = '';
+  setNowDatetime(); // 日時欄を現在時刻にリセット
 
   updateCounter();
   buildPrefOptions('qth-pref', '');
   document.getElementById('callsign').focus();
+}
+
+// 日時欄に現在時刻をセットするヘルパー
+function setNowDatetime() {
+  const now = new Date();
+  const y  = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d  = String(now.getDate()).padStart(2, '0');
+  const h  = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('log-datetime').value = `${y}-${mo}-${d}T${h}:${mi}`;
 }
 
 // ===== タブ =====
@@ -1375,13 +1390,6 @@ function updatePendingInline() {
 }
 
 // ===== エクスポート =====
-// ============================================================
-// TODO【正式リリース時に対応】エクスポート時の注意喚起
-// エクスポートしたCSV/JSONファイルをクラウドストレージや
-// 共有フォルダに置くとログが流出する可能性がある。
-// 対応案：ダウンロード直前に「ファイルの共有・クラウド保存にご注意ください」
-//         といった一言の警告ダイアログを表示する。
-// ============================================================
 function exportCSV() {
   const logs = getLogs();
   if (logs.length === 0) { alert('記録がありません'); return; }
@@ -1537,13 +1545,6 @@ function openGasUrl() {
 
 function saveGasUrl() {
   const url = document.getElementById('gas-url-input').value.trim();
-  // ============================================================
-  // TODO【正式リリース時に対応】GAS URL検証の強化
-  // 現状：https://script.google.com/ で始まればOKにしているが、
-  //       端末を他人に操作された場合に偽URLに差し替えられる理論的リスクがある。
-  // 対応案：URLのフォーマットをより厳密に正規表現で検証する。
-  //   例: /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)
-  // ============================================================
   if (url && !url.startsWith('https://script.google.com/')) {
     alert('正しいGAS URLを入力してください');
     return;
