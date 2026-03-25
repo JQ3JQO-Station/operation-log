@@ -14,18 +14,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0d0d;
-    --surface: #1a2535;
-    --surface2: #243447;
+    /* ダークモード（改善版） */
+    --bg: #111820;
+    --surface: #1e2d3d;
+    --surface2: #2a3f55;
     --accent: #30d158;
-    --accent2: #0a84ff;
+    --accent2: #2196f3;
     --warn: #ffd60a;
     --danger: #ff453a;
     --text: #ffffff;
     --text2: #d0d0d0;
-    --border: #2e4a6a;
+    --border: #3a5a7a;
     --radius: 14px;
     --shadow-text: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6);
+  }
+
+  /* ライトモード */
+  body.light {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8eef4;
+    --accent: #1a8f3c;
+    --accent2: #0066cc;
+    --warn: #b87a00;
+    --danger: #cc2200;
+    --text: #111111;
+    --text2: #444444;
+    --border: #b0c4d8;
+    --shadow-text: none;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; padding: 12px; font-size: 16px; overflow-x: hidden; }
@@ -40,9 +56,20 @@
     appearance: none;
   }
 
-  .header { text-align: center; padding: 16px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .header { text-align: center; padding: 16px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 16px; position: relative; }
   .header h1 { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 0.12em; font-family: 'Share Tech Mono', monospace; text-shadow: var(--shadow-text); }
   .header p { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+  /* テーマ切替ボタン */
+  .theme-toggle {
+    position: absolute; top: 50%; right: 0; transform: translateY(-50%);
+    background: var(--surface2); border: 2px solid var(--border);
+    border-radius: 20px; color: var(--text); font-size: 12px; font-weight: 700;
+    padding: 6px 12px; cursor: pointer; white-space: nowrap;
+    font-family: 'Noto Sans JP', sans-serif; transition: all 0.2s;
+    line-height: 1.4;
+  }
+  .theme-toggle:active { opacity: 0.7; }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
   .card-label { font-size: 15px; font-weight: 700; color: var(--accent2); letter-spacing: 0.06em; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); text-shadow: var(--shadow-text); }
@@ -229,6 +256,13 @@
   }
   .log-qth { font-size: 13px; color: var(--text2); }
   .log-time { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--border); }
+
+  /* ライトモード時のセレクト矢印 */
+  body.light select.qth-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23444444' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+  /* ライトモード時のmodal背景 */
+  body.light .modal-overlay { background: rgba(0,0,0,0.4); }
 </style>
 </head>
 <body>
@@ -239,6 +273,7 @@
   <h1>OPERATION LOG</h1>
   <p style="font-size:11px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:0.12em;margin-top:2px;">Standalone ver</p>
   <p id="header-date"></p>
+  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ ライト</button>
 </div>
 
 <!-- 自局QTHバー -->
@@ -874,7 +909,9 @@ function init() {
   renderGasUrlDisplay();
   // standalone版：GASモーダルは表示しない。自局QTHのみ初回に聞く。
   if (!getMyQTH()) setTimeout(openMyQTH, 400);
-  setNowDatetime(); // 日時欄に現在時刻をセット
+  setNowDatetime();
+  // 保存済みテーマを適用
+  applyTheme(localStorage.getItem('theme_mode') || 'dark');
   updateCounter();
   checkOnline();
 }
@@ -1688,6 +1725,25 @@ function checkOnline() {
 }
 window.addEventListener('online', checkOnline);
 window.addEventListener('offline', checkOnline);
+
+// ===== テーマ切替 =====
+function applyTheme(mode) {
+  const btn = document.getElementById('theme-toggle');
+  if (mode === 'light') {
+    document.body.classList.add('light');
+    btn.textContent = '☾ ダーク';
+  } else {
+    document.body.classList.remove('light');
+    btn.textContent = '☀ ライト';
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.contains('light');
+  const newMode = isLight ? 'dark' : 'light';
+  localStorage.setItem('theme_mode', newMode);
+  applyTheme(newMode);
+}
 
 init();
 
