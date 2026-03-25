@@ -897,9 +897,11 @@ function applySuggest(idx) {
   if (!h) return;
   document.getElementById('callsign').value = h.cs;
   document.getElementById('suggest-list').classList.remove('show');
-  // 種別・QTHも自動セット
-  const catBtn = document.querySelector(`.btn-cat[data-cat="${h.cat}"]`);
-  if (catBtn) selectCat(catBtn);
+  // 種別：未選択のときだけ自動セット（選択済みなら上書きしない）
+  if (!state.cat) {
+    const catBtn = document.querySelector(`.btn-cat[data-cat="${h.cat}"]`);
+    if (catBtn) selectCat(catBtn);
+  }
   if (h.pref) document.getElementById('qth-pref').value = h.pref;
   if (h.city) document.getElementById('qth-city').value = h.city;
   if (h.detail) document.getElementById('qth-detail').value = h.detail || '';
