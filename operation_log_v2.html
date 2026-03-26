@@ -255,6 +255,21 @@
   }
   .log-qth { font-size: 13px; color: var(--text2); }
   .log-time { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--border); }
+  .btn-edit-log {
+    font-size: 12px; color: var(--accent2); border: 1px solid var(--accent2);
+    border-radius: 6px; background: none; padding: 3px 10px; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif; font-weight: 700; flex-shrink: 0;
+    margin-left: 8px;
+  }
+  .btn-edit-log:active { opacity: 0.7; }
+
+  /* 編集モーダル */
+  .edit-modal-body { max-height: 65vh; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
+  .edit-section-label {
+    font-size: 12px; font-weight: 700; color: var(--accent2);
+    letter-spacing: 0.06em; margin: 14px 0 8px;
+    padding-bottom: 4px; border-bottom: 1px solid var(--border);
+  }
 
   /* ライトモード時のセレクト矢印 */
   body.light select.qth-select {
@@ -681,6 +696,100 @@
     </div>
     <div class="modal-actions" style="margin-top:16px;">
       <button class="btn-modal-ok" onclick="closeTerms()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ログ編集モーダル -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>ログを編集</h2>
+    <div class="edit-modal-body">
+
+      <!-- 交信日時 -->
+      <div class="edit-section-label">交信日時</div>
+      <input type="datetime-local" id="edit-datetime"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:2px solid var(--border);
+               border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;
+               font-size:16px;font-weight:700;padding:12px;outline:none;color-scheme:dark;"
+        onfocus="this.style.borderColor='var(--accent2)'"
+        onblur="this.style.borderColor='var(--border)'"/>
+
+      <!-- コールサイン -->
+      <div class="edit-section-label">コールサイン</div>
+      <div style="display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;">
+        <input type="text" id="edit-callsign"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          style="flex:1;min-width:0;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+                 color:var(--text);font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;
+                 padding:12px 14px;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--accent2)'"
+          onblur="this.style.borderColor='var(--border)'"/>
+        <span style="font-size:18px;font-weight:700;color:var(--text2);flex-shrink:0;">/</span>
+        <input type="tel" id="edit-portable" maxlength="1"
+          style="width:48px;flex-shrink:0;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+                 color:var(--text);font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;
+                 padding:12px 6px;text-align:center;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--accent2)'"
+          onblur="this.style.borderColor='var(--border)'"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,1)"/>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px;">
+        <span style="font-size:10px;color:var(--text2);">コールサイン</span>
+        <span style="font-size:10px;color:var(--text2);">ポータブル（不要なら空欄）</span>
+      </div>
+
+      <!-- RST -->
+      <div class="edit-section-label">レポート</div>
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700;">送信</div>
+          <input type="tel" id="edit-rst-tx" maxlength="3" placeholder="59"
+            style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+                   color:var(--text);font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:700;
+                   padding:12px;text-align:center;outline:none;"
+            onfocus="this.style.borderColor='var(--accent2)'"
+            onblur="this.style.borderColor='var(--border)'"/>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700;">受信</div>
+          <input type="tel" id="edit-rst-rx" maxlength="6" placeholder="59"
+            style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+                   color:var(--text);font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:700;
+                   padding:12px;text-align:center;outline:none;"
+            onfocus="this.style.borderColor='var(--accent2)'"
+            onblur="this.style.borderColor='var(--border)'"/>
+        </div>
+      </div>
+
+      <!-- QTH -->
+      <div class="edit-section-label">相手局 QTH</div>
+      <div class="qth-row">
+        <div class="qth-label-sm">都道府県</div>
+        <select class="qth-select" id="edit-pref"></select>
+      </div>
+      <div class="qth-row">
+        <div class="qth-label-sm">市区町村</div>
+        <input class="qth-text" id="edit-city" type="text" placeholder="例：京都市" autocomplete="off"/>
+      </div>
+      <div class="qth-row">
+        <div class="qth-label-sm">詳細(任意)</div>
+        <input class="qth-text" id="edit-detail" type="text" placeholder="例：大文字山" autocomplete="off"/>
+      </div>
+
+      <!-- メモ -->
+      <div class="edit-section-label">メモ</div>
+      <textarea id="edit-memo" rows="3" placeholder="自由記述"
+        style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:15px;
+               padding:12px;outline:none;resize:none;line-height:1.6;box-sizing:border-box;"
+        onfocus="this.style.borderColor='var(--accent2)'"
+        onblur="this.style.borderColor='var(--border)'"></textarea>
+
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeEditModal()">キャンセル</button>
+      <button class="btn-modal-ok" onclick="saveEditLog()">保存する</button>
     </div>
   </div>
 </div>
@@ -1283,6 +1392,7 @@ function renderLog() {
         <span class="log-cat">${l.cat || ''}</span>
         <span class="log-cs">${cs}</span>
         <span class="log-rst">${rst}</span>
+        <button class="btn-edit-log" onclick="openEditModal('${l.id}')">編集</button>
       </div>
       <div class="log-item-bottom">
         <span class="log-qth">${qth}</span>
@@ -1713,6 +1823,97 @@ function checkOnline() {
 }
 window.addEventListener('online', checkOnline);
 window.addEventListener('offline', checkOnline);
+
+// ===== ログ編集 =====
+let _editingLogId = null;
+
+function openEditModal(id) {
+  const logs = getLogs();
+  const log = logs.find(l => String(l.id) === String(id));
+  if (!log) return;
+  _editingLogId = log.id;
+
+  const dt = new Date(log.ts);
+  const y  = dt.getFullYear();
+  const mo = String(dt.getMonth()+1).padStart(2,'0');
+  const d  = String(dt.getDate()).padStart(2,'0');
+  const h  = String(dt.getHours()).padStart(2,'0');
+  const mi = String(dt.getMinutes()).padStart(2,'0');
+  document.getElementById('edit-datetime').value = `${y}-${mo}-${d}T${h}:${mi}`;
+
+  document.getElementById('edit-callsign').value = log.csBase || log.cs || '';
+  document.getElementById('edit-portable').value = log.portable || '';
+  document.getElementById('edit-rst-tx').value = log.rstTx || '';
+  document.getElementById('edit-rst-rx').value = log.rstRx || '';
+
+  buildPrefOptions('edit-pref', log.pref || '');
+  document.getElementById('edit-city').value   = log.city   || '';
+  document.getElementById('edit-detail').value = log.detail || '';
+  document.getElementById('edit-memo').value   = log.memo   || '';
+
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+  _editingLogId = null;
+}
+
+function saveEditLog() {
+  if (!_editingLogId) return;
+
+  const dtVal = document.getElementById('edit-datetime').value;
+  if (!dtVal) { alert('交信日時を入力してください'); return; }
+
+  const csRaw    = document.getElementById('edit-callsign').value.trim();
+  const cs       = normalizeCallsign(csRaw);
+  const portable = document.getElementById('edit-portable').value.trim();
+  const csDisplay = portable ? `${cs}/${portable}` : cs;
+
+  if (!cs) { alert('コールサインを入力してください'); return; }
+
+  const pref = document.getElementById('edit-pref').value;
+  if (!pref) { alert('都道府県を選択してください'); return; }
+
+  const logs = getLogs();
+  const idx  = logs.findIndex(l => String(l.id) === String(_editingLogId));
+  if (idx === -1) { alert('編集対象のログが見つかりません'); return; }
+
+  logs[idx] = {
+    ...logs[idx],
+    ts:       new Date(dtVal).toISOString(),
+    cs:       csDisplay,
+    csBase:   cs,
+    csNorm:   normalizeCallsign(cs),
+    portable: portable,
+    rstTx:    document.getElementById('edit-rst-tx').value.trim(),
+    rstRx:    document.getElementById('edit-rst-rx').value.trim(),
+    pref:     pref,
+    city:     document.getElementById('edit-city').value.trim(),
+    detail:   document.getElementById('edit-detail').value.trim(),
+    memo:     document.getElementById('edit-memo').value.trim(),
+  };
+
+  saveLogs(logs);
+  closeEditModal();
+  renderLog();
+
+  // GASへ修正データを再送信（設定済みの場合）
+  const gasUrl = getGasUrl();
+  if (gasUrl) {
+    fetch(gasUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(logs[idx]),
+      headers: { 'Content-Type': 'application/json' }
+    }).catch(err => console.error('GAS再送信失敗:', err));
+  }
+
+  const flash = document.getElementById('flash');
+  flash.textContent = `✓  ${csDisplay}  を修正しました`;
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 2000);
+}
 
 // ===== テーマ切替 =====
 function applyTheme(mode) {
