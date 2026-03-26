@@ -579,7 +579,7 @@
   </div>
 </div>
 
-<!-- データ管理タブ -->
+  <!-- データ管理タブ -->
 <div class="tab-pane" id="tab-data">
 
   <!-- エクスポート -->
@@ -592,20 +592,16 @@
     <p style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6;">※ 保存したファイルは大切に管理してください。クラウドや共有フォルダへの保存はご注意ください。</p>
   </div>
 
-  <!-- インポート -->
+  <!-- インポート（JSONバックアップ復元のみ） -->
   <div class="card">
-    <div class="card-label">データを読み込む</div>
+    <div class="card-label">バックアップから復元</div>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="downloadTemplate()" style="background:var(--surface2);border:2px solid var(--accent);border-radius:10px;color:var(--accent);font-size:14px;font-weight:700;padding:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">① CSVテンプレートをダウンロード</button>
       <label style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;display:block;">
-        ② CSVから読み込む
-        <input type="file" accept=".csv" onchange="importCSV(event)" style="display:none;"/>
-      </label>
-      <label style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;display:block;">
-        バックアップから復元
+        バックアップファイルを選択
         <input type="file" accept=".json" onchange="importJSON(event)" style="display:none;"/>
       </label>
     </div>
+    <p style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6;">※「バックアップ作成」で保存したファイルを読み込みます。</p>
   </div>
 
   <!-- 全データ削除 -->
@@ -1615,18 +1611,7 @@ function exportJSON() {
   downloadFile(JSON.stringify(logs, null, 2), `oplog_backup_${dateStr()}.json`, 'application/json');
 }
 
-function downloadTemplate() {
-  const headers = ['No','日時','種別','DCR出力','特小交信方法','特小レピーター名','LCR距離(km)','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細','メモ'];
-  const sample  = ['例','2025/03/25 10:30','DCR','5W','','','','きょうとXX999','','59','59','京都府','京都市','大文字山','京都府','京都市','大文字山','メモ欄'];
-  const note    = ['※日時は「2025/03/25 10:30」の形式で入力してください。No欄は空欄可。','','','','','','','','','','','','','','','','',''];
-  const bom = '\uFEFF';
-  const csv = [
-    headers.map(h => `"${h}"`).join(','),
-    note.map(v => `"${v}"`).join(','),
-    sample.map(v => `"${v}"`).join(',')
-  ].join('\n') + '\n';
-  downloadFile(bom + csv, 'oplog_template.csv', 'text/csv');
-}
+// Lo版：downloadTemplate・importCSVは削除（iPadで完結できないため）
 
 function downloadFile(content, filename, type) {
   const a = document.createElement('a');
@@ -1639,47 +1624,6 @@ function downloadFile(content, filename, type) {
 function dateStr() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-}
-
-// ===== インポート =====
-function importCSV(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const text = ev.target.result.replace(/^\uFEFF/, '');
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length < 2) { alert('データがありません'); return; }
-    const rows = lines.slice(1);
-    const newLogs = rows.map(row => {
-      const cols = row.split(',').map(c => c.replace(/^"|"$/g,'').replace(/""/g,'"'));
-      return {
-        id: Date.now() + Math.random(),
-        ts: new Date(cols[1] || Date.now()).toISOString(),
-        cat: cols[2] || '',
-        tokushoMode: cols[3] || '',
-        cs: (cols[4] || '') + (cols[5] ? '/' + cols[5] : ''),
-        csBase: cols[4] || '',
-        portable: cols[5] || '',
-        rstTx: cols[6] || '',
-        rstRx: cols[7] || '',
-        pref: cols[8] || '',
-        city: cols[9] || '',
-        detail: cols[10] || '',
-        myPref: cols[11] || '',
-        myCity: cols[12] || '',
-        myDetail: cols[13] || '',
-        sent: true
-      };
-    });
-    const choice = confirm(`${newLogs.length}件のデータを取り込みます。\nOK→既存データに追加\nキャンセル→既存データを上書き`);
-    const existing = choice ? getLogs() : [];
-    saveLogs([...existing, ...newLogs]);
-    updateCounter();
-    alert(`${newLogs.length}件を取り込みました`);
-    e.target.value = '';
-  };
-  reader.readAsText(file, 'UTF-8');
 }
 
 function importJSON(e) {
