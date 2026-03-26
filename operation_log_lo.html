@@ -206,12 +206,7 @@
   .btn-modal-ok { flex: 1; background: var(--accent2); border: none; border-radius: 10px; color: #fff; font-size: 17px; font-weight: 700; padding: 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; text-shadow: var(--shadow-text); }
   .btn-modal-cancel { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-size: 17px; font-weight: 700; padding: 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
 
-  .pending-list { max-height: 200px; overflow-y: auto; }
-  .pending-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 15px; font-family: 'Share Tech Mono', monospace; }
-  .pending-item:last-child { border-bottom: none; }
-  .pending-item .meta { color: var(--text2); font-size: 12px; }
-  .btn-send-all { width: 100%; background: var(--warn); border: none; border-radius: var(--radius); color: #000; font-size: 17px; font-weight: 700; padding: 16px; cursor: pointer; margin-top: 10px; font-family: 'Noto Sans JP', sans-serif; }
-  .btn-send-all:active { opacity: 0.8; }
+  /* Lo版：.pending-list・.btn-send-all は削除済み */
   /* 検索結果1行レイアウト */
   .search-item {
     display: grid;
@@ -323,26 +318,6 @@
 </div>
 
 <!-- GAS URL設定モーダル -->
-<div class="modal-overlay" id="gasurl-modal">
-  <div class="modal">
-    <h2>クラウド保存先の設定</h2>
-    <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
-      GoogleスプレッドシートのGASをデプロイして取得したURLを入力してください。
-    </p>
-    <input class="qth-text" id="gas-url-input" type="url"
-      placeholder="https://script.google.com/macros/s/..."
-      autocomplete="off"
-      style="width:100%;font-size:13px;padding:12px;margin-bottom:8px;"/>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;">
-      ※ クラウド保存を使わない場合はスキップできます
-    </p>
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="skipGasUrl()">スキップ</button>
-      <button class="btn-modal-ok" onclick="saveGasUrl()">設定する</button>
-    </div>
-  </div>
-</div>
-
 <div class="nav-btns">
   <button class="nav-btn active" onclick="switchTab('input',this)">入力</button>
   <button class="nav-btn" onclick="switchTab('log',this)">ログ一覧 ／ 検索</button>
@@ -611,35 +586,6 @@
     <button onclick="deleteAllData()" style="width:100%;background:transparent;border:2px solid var(--danger);border-radius:var(--radius);color:var(--danger);font-size:17px;font-weight:700;padding:16px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
       全データを削除する
     </button>
-  </div>
-
-  <!-- 上級者向け：GAS連携（折りたたみ） -->
-  <div class="card" style="border-color:var(--text2);">
-    <div onclick="toggleAdvanced()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
-      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;color:var(--text2);font-size:13px;">
-        ⚙ 上級者向け設定（Googleスプレッドシート連携）
-      </div>
-      <span id="advanced-arrow" style="color:var(--text2);font-size:18px;transition:transform 0.2s;">▶</span>
-    </div>
-    <div id="advanced-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7;">
-        GoogleスプレッドシートのGAS（Google Apps Script）と連携すると、交信ログをクラウドに自動保存できます。設定にはGASのデプロイ作業が必要です。
-      </p>
-      <!-- GAS URL設定 -->
-      <div style="margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px;">クラウド保存先 URL</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;word-break:break-all;" id="gasurl-display">未設定（クラウド保存無効）</div>
-        <button onclick="openGasUrl()" style="width:100%;background:var(--surface2);border:2px solid var(--text2);border-radius:10px;color:var(--text2);font-size:14px;font-weight:700;padding:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">GAS URLを設定・変更する</button>
-      </div>
-      <!-- 未送信データ -->
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;">未送信データ</div>
-        <div class="pending-list" id="pending-list"></div>
-        <button class="btn-send-all" id="btn-send-all" onclick="sendAll()" style="display:none;">
-          ▲ まとめてクラウドに送信
-        </button>
-      </div>
-    </div>
   </div>
 
 </div>
@@ -1013,24 +959,12 @@ function init() {
   renderMyQTH();
   buildPrefOptions('qth-pref', '');
   buildPrefOptions('my-pref', '');
-  renderGasUrlDisplay();
-  // standalone版：GASモーダルは表示しない。自局QTHのみ初回に聞く。
+  // Lo版：GAS関連初期化なし
   if (!getMyQTH()) setTimeout(openMyQTH, 400);
   setNowDatetime();
-  // 保存済みテーマを適用
   applyTheme(localStorage.getItem('theme_mode') || 'dark');
   updateCounter();
   checkOnline();
-}
-
-// 上級者向けセクションの折りたたみ
-function toggleAdvanced() {
-  const section = document.getElementById('advanced-section');
-  const arrow   = document.getElementById('advanced-arrow');
-  const isOpen  = section.style.display !== 'none';
-  section.style.display = isOpen ? 'none' : 'block';
-  arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
-  if (!isOpen) renderPending(); // 開いたときだけ未送信リストを描画
 }
 
 function updateCounter() {
@@ -1647,121 +1581,7 @@ function importJSON(e) {
   reader.readAsText(file);
 }
 
-// ===== 未送信 =====
-function renderPending() {
-  const pending = getLogs().filter(l => !l.sent);
-  const list = document.getElementById('pending-list');
-  const btn  = document.getElementById('btn-send-all');
-  if (pending.length === 0) {
-    list.innerHTML = '<div class="empty-msg">未送信のデータはありません</div>';
-    btn.style.display = 'none';
-    return;
-  }
-  btn.style.display = 'block';
-  list.innerHTML = pending.map(l => {
-    const d = new Date(l.ts);
-    const time = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-    const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
-    return `<div class="pending-item">
-      <div>
-        <span style="color:var(--accent2);font-weight:700;">${l.cs}</span>
-        <span style="color:var(--text2);font-size:11px;margin-left:6px;">[${l.cat}] ${l.rstRx}/${l.rstTx}</span>
-        <div class="meta">${qth}</div>
-      </div>
-      <div style="color:var(--text2);font-size:11px;">${time}</div>
-    </div>`;
-  }).join('');
-}
-
-function getGasUrl() {
-  return localStorage.getItem('gas_url') || '';
-}
-
-function openGasUrl() {
-  document.getElementById('gas-url-input').value = getGasUrl();
-  document.getElementById('gasurl-modal').classList.add('show');
-}
-
-function saveGasUrl() {
-  const url = document.getElementById('gas-url-input').value.trim();
-  if (url && !url.startsWith('https://script.google.com/')) {
-    alert('正しいGAS URLを入力してください');
-    return;
-  }
-  localStorage.setItem('gas_url', url);
-  document.getElementById('gasurl-modal').classList.remove('show');
-  renderGasUrlDisplay();
-}
-
-function skipGasUrl() {
-  localStorage.setItem('gas_url', '');
-  document.getElementById('gasurl-modal').classList.remove('show');
-  renderGasUrlDisplay();
-}
-
-function renderGasUrlDisplay() {
-  const url = getGasUrl();
-  const el = document.getElementById('gasurl-display');
-  if (url) {
-    el.textContent = url;
-    el.style.color = 'var(--accent)';
-  } else {
-    el.textContent = '未設定（クラウド保存無効）';
-    el.style.color = 'var(--text2)';
-  }
-}
-
-const GAS_URL = getGasUrl();
-
-async function sendAll() {
-  const gasUrl = getGasUrl();
-  if (!gasUrl) {
-    alert('GASのURLが設定されていません。\nデータ管理タブで設定してください。');
-    return;
-  }
-  const logs = getLogs();
-  const pending = logs.filter(l => !l.sent);
-  if (pending.length === 0) return;
-
-  const btn = document.getElementById('btn-send-all');
-  // standalone版：入力タブに未送信ボタンなし
-
-  // ボタンを消す
-  btn.style.display = 'none';
-
-  let successCount = 0;
-  const updatedLogs = [...logs];
-
-  for (const log of pending) {
-    try {
-      await fetch(gasUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify(log),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const idx = updatedLogs.findIndex(l => l.id === log.id);
-      if (idx !== -1) updatedLogs[idx] = { ...updatedLogs[idx], sent: true };
-      successCount++;
-    } catch(e) {
-      console.error('送信失敗:', e);
-    }
-  }
-
-  saveLogs(updatedLogs);
-
-  // 送信完了→ボタン復活
-  btn.style.display = 'block';
-
-  if (successCount === pending.length) {
-    alert(`✓ ${successCount}件をスプレッドシートに記録しました`);
-  } else {
-    alert(`${successCount}件成功 / ${pending.length - successCount}件失敗\n失敗分は次回再送されます`);
-  }
-
-  renderPending();
-  updateCounter();
-}
+// ===== Lo版：GAS関連関数は削除（renderPending・getGasUrl・openGasUrl・saveGasUrl・skipGasUrl・renderGasUrlDisplay・sendAll） =====
 
 function deleteAllData() {
   const count = getLogs().length;
@@ -1772,7 +1592,6 @@ function deleteAllData() {
   if (!step2) return;
   localStorage.removeItem('rc_logs');
   updateCounter();
-  renderPending();
   alert('全データを削除しました');
 }
 
