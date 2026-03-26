@@ -796,12 +796,12 @@ const ROMAJI_MAP = [
   ['n','ん'],
 ];
 
-// ===== 正規化：何が入力されても「ひらがな」に統一 =====
+// ===== 検索用：地域部分をひらがなに統一（csNorm生成用） =====
 function normalize(str) {
   if (!str) return '';
   let s = str.toLowerCase();
 
-  // カタカナ→ひらがな
+  // カタカナ→ひらがな（検索用のみ）
   s = s.replace(/[\u30A1-\u30F6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
 
   // ローマ字→ひらがな（長い順にマッチ）
@@ -818,7 +818,6 @@ function normalize(str) {
       }
     }
     if (!matched) {
-      // ひらがなはそのまま、その他（英数字など）はそのまま
       result += s[i];
       i++;
     }
@@ -834,16 +833,35 @@ function toHankaku(str) {
     .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
 }
 
-// コールサインの地域部分だけ正規化（英字・数字は触らない）
+// 半角カナ→全角カナに変換
+function toZenkakuKana(str) {
+  const hankakuKana = 'ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ';
+  const zenkakuKana = 'ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン゛゜';
+  return str.replace(/[ｦ-ﾟ]/g, c => zenkakuKana[hankakuKana.indexOf(c)] || c);
+}
+
+// ===== コールサイン正規化（保存・表示用） =====
+// 変換内容：全角英数→半角、半角カナ→全角カナ、英字は大文字
+// カタカナはカタカナのまま保持、ひらがなはひらがなのまま保持
 function normalizeCallsign(cs) {
-  // まず全角英数→半角に統一
+  // 全角英数→半角、半角カナ→全角カナ
+  let s = toHankaku(toZenkakuKana(cs));
+  // 末尾の英字+数字部分を分離して英字を大文字に
+  const m = s.match(/^(.*?)([A-Za-z]{1,2})(\d{1,3})$/);
+  if (m) {
+    return m[1] + m[2].toUpperCase() + m[3];
+  }
+  return s;
+}
+
+// ===== コールサイン検索用正規化（csNorm生成用） =====
+// ひらがな・カタカナ・ローマ字をすべてひらがなに統一して検索に使う
+function normalizeCallsignForSearch(cs) {
   const han = toHankaku(cs);
-  // 末尾の英字2文字+数字3桁を分離して地域部分だけひらがな正規化
   const m = han.match(/^(.*?)([A-Za-z]{1,2})(\d{1,3})$/);
   if (m) {
     return normalize(m[1]) + m[2].toUpperCase() + m[3];
   }
-  // 分離できない場合は全体を正規化（途中入力中）
   return normalize(han);
 }
 
@@ -1166,7 +1184,7 @@ function submitLog() {
     lcrDistance: state.cat === 'LCR' ? (document.getElementById('lcr-distance').value.trim() || '') : '',
     cs: csDisplay,
     csBase: cs,
-    csNorm: normalizeCallsign(cs),
+    csNorm: normalizeCallsignForSearch(cs),
     portable: portable,
     rstRx: rstRxVal,
     rstTx: rstTxVal,
@@ -1387,7 +1405,7 @@ function searchByCs() {
   }
 
   const results = getLogs().filter(l => {
-    const csNorm = l.csNorm || normalizeCallsign(l.cs || '');
+    const csNorm = l.csNorm || normalizeCallsignForSearch(l.cs || '');
     return csNorm.includes(query) || (l.cs || '').toLowerCase().includes(query.toLowerCase());
   }).reverse();
 
@@ -1676,7 +1694,7 @@ function saveEditLog() {
     ts:       new Date(dtVal).toISOString(),
     cs:       csDisplay,
     csBase:   cs,
-    csNorm:   normalizeCallsign(cs),
+    csNorm:   normalizeCallsignForSearch(cs),
     portable: portable,
     rstTx:    document.getElementById('edit-rst-tx').value.trim(),
     rstRx:    document.getElementById('edit-rst-rx').value.trim(),
