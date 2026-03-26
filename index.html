@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPERATION LOG</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #1B3A6B;
+    --teal:   #0D7377;
+    --green:  #14A44D;
+    --text:   #1A1A2E;
+    --gray:   #64748B;
+    --lgray:  #E2E8F0;
+    --offwh:  #F5F7FA;
+    --white:  #FFFFFF;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--offwh);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ヘッダー */
+  .header {
+    background: var(--navy);
+    padding: 28px 24px 22px;
+    text-align: center;
+    border-bottom: 4px solid var(--teal);
+  }
+  .header h1 {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 28px;
+    color: #fff;
+    letter-spacing: 0.15em;
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--teal);
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 28px 16px 48px; }
+
+  /* セクションタイトル */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--lgray);
+  }
+
+  /* アプリ選択カード */
+  .app-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  @media (max-width: 560px) { .app-grid { grid-template-columns: 1fr; } }
+
+  .app-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--lgray);
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-decoration: none;
+    display: block;
+  }
+  .app-card:active { transform: scale(0.98); }
+
+  .app-card-header {
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  .app-card-header.v2  { background: var(--navy); }
+  .app-card-header.lo  { background: var(--teal); }
+
+  .app-card-header .label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .app-card-header .sublabel {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 3px;
+  }
+
+  .app-card-body { padding: 14px 20px 18px; }
+  .app-card-body p {
+    font-size: 13px;
+    color: var(--gray);
+    line-height: 1.7;
+  }
+  .app-card-body .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+  }
+  .tag.v2 { background: #EBF0F7; color: var(--navy); }
+  .tag.lo { background: #E0F4F5; color: var(--teal); }
+
+  .app-card-btn {
+    display: block;
+    margin: 0 20px 18px;
+    padding: 13px;
+    text-align: center;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: opacity 0.15s;
+  }
+  .app-card-btn.v2 { background: var(--navy); }
+  .app-card-btn.lo { background: var(--teal); }
+  .app-card-btn:active { opacity: 0.8; }
+
+  /* 比較表セクション */
+  .compare-section { margin-bottom: 36px; }
+  /* マニュアルダウンロード */
+  .manual-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 560px) { .manual-grid { grid-template-columns: 1fr; } }
+
+  .manual-card {
+    background: var(--white);
+    border: 1px solid var(--lgray);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .manual-card .title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .manual-card .desc {
+    font-size: 12px;
+    color: var(--gray);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .manual-card a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    color: #fff;
+    transition: opacity 0.15s;
+  }
+  .manual-card a:active { opacity: 0.8; }
+  .manual-card a.v2 { background: var(--navy); }
+  .manual-card a.lo { background: var(--teal); }
+
+  /* 比較表CTA */
+  .compare-cta {
+    background: var(--white);
+    border: 1px solid var(--lgray);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    padding: 28px 24px;
+    text-align: center;
+  }
+  .compare-cta-lead {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--navy);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+  .compare-cta-sub {
+    font-size: 13px;
+    color: var(--gray);
+    margin-bottom: 20px;
+  }
+  .compare-cta-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--navy), var(--teal));
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 16px 32px;
+    border-radius: 10px;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 16px rgba(13,115,119,0.3);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .compare-cta-btn:active { opacity: 0.85; transform: scale(0.98); }
+  .compare-cta-note {
+    font-size: 11px;
+    color: var(--gray);
+    margin-top: 12px;
+  }
+
+  /* フッター */
+  .footer {
+    text-align: center;
+    padding: 24px 16px;
+    border-top: 1px solid var(--lgray);
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 8px;
+  }
+  .footer span { color: var(--teal); font-family: 'Share Tech Mono', monospace; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>OPERATION LOG</h1>
+  <p>フリーライセンス無線　交信ログ管理アプリ　— JQ3JQO / KyotoDR120</p>
+</div>
+
+<div class="container">
+
+  <!-- アプリ選択 -->
+  <div class="section-title">アプリを選択してください</div>
+  <div class="app-grid">
+
+    <!-- V2版 -->
+    <div class="app-card">
+      <div class="app-card-header v2">
+        <div class="label">OPERATION LOG V2</div>
+        <div class="sublabel">PC・上級者向け／Googleスプレッドシート連携</div>
+      </div>
+      <div class="app-card-body">
+        <p>PCをメインに使っている方向けのフル機能版。Googleスプレッドシートと連携して交信ログをクラウド管理できます。</p>
+        <span class="tag v2">初回設定あり</span>
+      </div>
+      <a class="app-card-btn v2" href="operation_log_v2.html">V2版を開く →</a>
+    </div>
+
+    <!-- Lo版 -->
+    <div class="app-card">
+      <div class="app-card-header lo">
+        <div class="label">OPERATION LOG Lo</div>
+        <div class="sublabel">スマホ・タブレット向け／設定不要</div>
+      </div>
+      <div class="app-card-body">
+        <p>スマホ・タブレットでそのまま使えるシンプル版。URLにアクセスするだけですぐ使えます。設定不要・登録不要。</p>
+        <span class="tag lo">すぐ使える</span>
+      </div>
+      <a class="app-card-btn lo" href="operation_log_lo.html">Lo版を開く →</a>
+    </div>
+
+  </div>
+
+  <!-- 比較表 -->
+  <div class="compare-section">
+    <div class="compare-cta">
+      <div class="compare-cta-text">
+        <div class="compare-cta-lead">どちらを選べばいいか迷ったら</div>
+        <div class="compare-cta-sub">機能の違いを1枚の表でまとめました</div>
+      </div>
+      <a class="compare-cta-btn" href="operation_log_compare.pdf" target="_blank">
+        V2版 と Lo版　機能をくらべる →
+      </a>
+      <div class="compare-cta-note">A4横1枚・印刷してお手元に置けます</div>
+    </div>
+  </div>
+
+  <!-- マニュアルダウンロード -->
+  <div class="section-title">使い方マニュアル（テキスト）</div>
+  <div class="manual-grid">
+
+    <div class="manual-card">
+      <div class="title">V2版　使い方マニュアル</div>
+      <div class="desc">Googleスプレッドシート連携の設定方法から全機能の使い方まで詳しく解説しています。</div>
+      <a class="v2" href="operation_log_v2_guide.txt" download>
+        ⬇ V2版マニュアルをダウンロード
+      </a>
+    </div>
+
+    <div class="manual-card">
+      <div class="title">Lo版　使い方マニュアル</div>
+      <div class="desc">スマホ・タブレットでの基本操作からバックアップ方法まで、初めての方向けに解説しています。</div>
+      <a class="lo" href="operation_log_lo_guide.txt" download>
+        ⬇ Lo版マニュアルをダウンロード
+      </a>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>OPERATION LOG</span>　&nbsp;JQ3JQO / KyotoDR120　&nbsp;無償提供・著作権は制作者に帰属します
+</div>
+
+</body>
+</html>
