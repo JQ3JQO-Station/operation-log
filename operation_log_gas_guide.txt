@@ -1,0 +1,269 @@
+================================================================
+OPERATION LOG V2　GAS設定ガイド
+================================================================
+Googleスプレッドシートとの連携設定手順
+作成者：JQ3JQO / KyotoDR120
+================================================================
+
+このガイドではOPERATION LOG V2をGoogleスプレッドシートと
+連携させるための設定手順を説明します。
+
+所要時間：約15〜20分
+必要なもの：Googleアカウント（Gmailアカウント）
+
+================================================================
+STEP 1　Googleスプレッドシートを作成する
+================================================================
+
+① ブラウザで以下のURLにアクセスします
+   https://sheets.google.com
+
+② 左上の「＋ 新しいスプレッドシート」をクリックします
+
+③ スプレッドシートが開いたら、上部のタイトル部分
+   「無題のスプレッドシート」をクリックして
+   好きな名前に変更します
+   例：「OPERATION LOG」
+
+④ このスプレッドシートを開いたまま次のSTEPに進みます
+
+
+================================================================
+STEP 2　GASスクリプトを貼り付ける
+================================================================
+
+① メニューバーの「拡張機能」をクリックします
+
+② 表示されたメニューから「Apps Script」をクリックします
+   ※ 新しいタブでスクリプトエディタが開きます
+
+③ スクリプトエディタの画面中央に最初から入力されている
+   コード（function myFunction() {...} など）を
+   全て選択して削除します
+   （Ctrl+A で全選択 → Delete キーで削除）
+
+④ 以下のコードをコピーして貼り付けます
+   ※ここから ↓ --------------------------------------------------------
+
+const SHEET_NAME = 'ログ';
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const sheet = getOrCreateSheet();
+
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        'ID', 'No', '日時', '種別', 'DCR出力', '特小交信方法',
+        '特小レピーター名', 'LCR距離(km)', 'コールサイン', 'ポータブル',
+        '送信RST', '受信RST', '相手局_都道府県', '相手局_市区町村',
+        '相手局_詳細', '自局_都道府県', '自局_市区町村', '自局_詳細', 'メモ'
+      ]);
+      sheet.getRange(1, 1, 1, 19)
+        .setFontWeight('bold')
+        .setBackground('#4472C4')
+        .setFontColor('#FFFFFF');
+      sheet.setFrozenRows(1);
+    }
+
+    const id = String(data.id);
+    const ts = new Date(data.ts);
+    const dateStr = Utilities.formatDate(ts, 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss');
+
+    const lastRow = sheet.getLastRow();
+    let targetRow = -1;
+    if (lastRow > 1) {
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === id) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    const rowData = [
+      id,
+      targetRow > 0 ? sheet.getRange(targetRow, 2).getValue() : lastRow,
+      dateStr,
+      data.cat          || '',
+      data.dcrPower     || '',
+      data.tokushoMode  || '',
+      data.repeaterName || '',
+      data.lcrDistance  || '',
+      data.csBase       || data.cs || '',
+      data.portable     || '',
+      data.rstTx        || '',
+      data.rstRx        || '',
+      data.pref         || '',
+      data.city         || '',
+      data.detail       || '',
+      data.myPref       || '',
+      data.myCity       || '',
+      data.myDetail     || '',
+      data.memo         || ''
+    ];
+
+    if (targetRow > 0) {
+      sheet.getRange(targetRow, 1, 1, 19).setValues([rowData]);
+    } else {
+      sheet.appendRow(rowData);
+    }
+
+    sheet.autoResizeColumns(1, 19);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: 'ok', id: id }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ result: 'ok', message: 'OPERATION LOG GAS is running' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getOrCreateSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    const default_sheet = ss.getSheetByName('シート1');
+    if (default_sheet) ss.deleteSheet(default_sheet);
+  }
+  return sheet;
+}
+
+   ※ここまで ↑ --------------------------------------------------------
+
+⑤ 画面上部のフロッピーディスクアイコン（💾）または
+   Ctrl+S を押して保存します
+
+⑥ プロジェクト名の入力を求められた場合は
+   「OPERATION LOG」などわかりやすい名前を入力して
+   「OK」をクリックします
+
+
+================================================================
+STEP 3　デプロイする
+================================================================
+
+① スクリプトエディタ右上の「デプロイ」ボタンをクリックします
+
+② 「新しいデプロイ」をクリックします
+
+③ 左上の歯車アイコン（⚙）をクリックして
+   「ウェブアプリ」を選択します
+
+④ 以下のように設定します：
+   ・説明：OPERATION LOG（任意）
+   ・次のユーザーとして実行：「自分」
+   ・アクセスできるユーザー：「全員」
+
+   ※「アクセスできるユーザー」を「全員」にしないと
+     アプリからデータを送信できません
+
+⑤「デプロイ」ボタンをクリックします
+
+⑥ 「アクセスを承認」という画面が表示された場合は
+   以下の手順で進みます：
+   ・「アクセスを承認」をクリック
+   ・自分のGoogleアカウントを選択
+   ・「詳細」をクリック
+   ・「OPERATION LOG（安全ではないページ）に移動」をクリック
+   ・「許可」をクリック
+
+   ※「安全ではない」と表示されますが、自分で作成した
+     スクリプトなので問題ありません
+
+⑦ デプロイが完了すると「ウェブアプリのURL」が表示されます
+   例：https://script.google.com/macros/s/XXXXXX.../exec
+
+⑧ このURLをコピーして手元に控えておきます
+   ※このURLは次のSTEPで使います
+
+
+================================================================
+STEP 4　アプリにURLを設定する
+================================================================
+
+① ブラウザでOPERATION LOG V2を開きます
+
+② 初回起動時は自動的に「クラウド保存先の設定」ウィンドウが
+   表示されます
+   ※表示されない場合は「データ管理」タブ →「GAS URLを設定・
+     変更する」ボタンをタップします
+
+③ STEP 3でコピーしたURLを入力欄に貼り付けます
+
+④「設定する」ボタンをタップします
+
+⑤ 設定完了です
+
+
+================================================================
+STEP 5　動作確認
+================================================================
+
+① OPERATION LOG V2の入力タブでテスト交信ログを1件記録します
+   （コールサイン・都道府県は適当な内容で構いません）
+
+② 「記録する」をタップします
+
+③ Googleスプレッドシートを開いて「ログ」シートを確認します
+
+④ 1行データが追加されていれば連携成功です
+
+⑤ 次にログ一覧タブで記録したログの「編集」ボタンをタップし
+   内容を変更して「保存する」をタップします
+
+⑥ スプレッドシートの該当行が上書き更新されていれば
+   編集連携も正常に動作しています
+
+
+================================================================
+うまくいかない場合のチェックリスト
+================================================================
+
+□ GASのデプロイ設定で「アクセスできるユーザー」が
+  「全員」になっているか確認する
+
+□ URLが正しくコピーされているか確認する
+  （https://script.google.com/macros/s/ で始まるURL）
+
+□ インターネットに接続されているか確認する
+
+□ スプレッドシートが削除・移動されていないか確認する
+
+□ それでも解決しない場合は一度デプロイを削除して
+  STEP 3からやり直してみてください
+  （「デプロイ」→「デプロイを管理」→ゴミ箱アイコン→削除）
+
+
+================================================================
+GASの設定変更・再デプロイについて
+================================================================
+
+スクリプトのコードを変更した場合は再デプロイが必要です。
+
+① スクリプトエディタで「デプロイ」→「デプロイを管理」
+
+② 右上の鉛筆アイコン（編集）をクリック
+
+③ バージョンを「新しいバージョン」に変更
+
+④「デプロイ」をクリック
+
+※ URLは変わりませんのでアプリ側の設定変更は不要です
+
+
+================================================================
+JQ3JQO / KyotoDR120
+OPERATION LOG V2　GAS設定ガイド
+================================================================
