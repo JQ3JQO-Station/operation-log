@@ -124,6 +124,64 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  // action=getAll のとき全データをJSONで返す
+  if (e && e.parameter && e.parameter.action === 'getAll') {
+    try {
+      const sheet = getOrCreateSheet();
+      const lastRow = sheet.getLastRow();
+      if (lastRow <= 1) {
+        return ContentService
+          .createTextOutput(JSON.stringify({ result: 'ok', logs: [] }))
+          .setMimeType(ContentService.MimeType.JSON)
+          .setHeaders({ 'Access-Control-Allow-Origin': '*' });
+      }
+
+      const headers = sheet.getRange(1, 1, 1, 19).getValues()[0];
+      const rows = sheet.getRange(2, 1, lastRow - 1, 19).getValues();
+
+      const logs = rows.map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i]; });
+
+        // スプレッドシートの列からアプリのデータ形式に変換
+        return {
+          id:           Number(obj['ID'])   || Date.now(),
+          ts:           obj['日時'] ? new Date(obj['日時']).toISOString() : new Date().toISOString(),
+          cat:          obj['種別']          || '',
+          dcrPower:     obj['DCR出力']       || '',
+          tokushoMode:  obj['特小交信方法']   || '',
+          repeaterName: obj['特小レピーター名'] || '',
+          lcrDistance:  obj['LCR距離(km)']   || '',
+          cs:           obj['コールサイン']   || '',
+          csBase:       obj['コールサイン']   || '',
+          csNorm:       obj['コールサイン']   || '',
+          portable:     obj['ポータブル']     || '',
+          rstTx:        String(obj['送信RST'] || ''),
+          rstRx:        String(obj['受信RST'] || ''),
+          pref:         obj['相手局_都道府県'] || '',
+          city:         obj['相手局_市区町村'] || '',
+          detail:       obj['相手局_詳細']    || '',
+          myPref:       obj['自局_都道府県']   || '',
+          myCity:       obj['自局_市区町村']   || '',
+          myDetail:     obj['自局_詳細']      || '',
+          memo:         obj['メモ']           || '',
+          sent:         true
+        };
+      }).filter(l => l.cs); // コールサインが空の行は除外
+
+      return ContentService
+        .createTextOutput(JSON.stringify({ result: 'ok', logs: logs }))
+        .setMimeType(ContentService.MimeType.JSON)
+        .setHeaders({ 'Access-Control-Allow-Origin': '*' });
+
+    } catch(err) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ result: 'error', message: err.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // 通常のGET（動作確認用）
   return ContentService
     .createTextOutput(JSON.stringify({ result: 'ok', message: 'OPERATION LOG GAS is running' }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -244,6 +302,25 @@ STEP 5　動作確認
 □ それでも解決しない場合は一度デプロイを削除して
   STEP 3からやり直してみてください
   （「デプロイ」→「デプロイを管理」→ゴミ箱アイコン→削除）
+
+
+================================================================
+STEP 5b　スプレッドシートから復元の動作確認
+================================================================
+
+スプレッドシートにデータがある状態で：
+
+① データ管理タブを開く
+
+② 「スプレッドシートから復元」ボタンをタップ
+
+③ 確認ダイアログで選択：
+   OK　　→ 既存データに追加
+   キャンセル → 既存データを上書き
+
+④ 「✓ ○件を取り込みました」と表示されれば成功
+
+※ この機能はGASを最新版に更新・再デプロイした後に使えます
 
 
 ================================================================
