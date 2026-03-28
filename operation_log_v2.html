@@ -1,4 +1,23 @@
 <!DOCTYPE html>
+<!--
+================================================================
+OPERATION LOG V2
+Version  : 2.0.0
+Updated  : 2026-03-28
+Author   : JQ3JQO / KyotoDR120
+Changes  : 初回正式リリース
+           RSTボタン送受信を同じ構成に統一
+           コールサイン候補からポータブル番号を除外
+           よく使う都道府県を直近5件（新しい順）に変更
+           編集ウィンドウにトランシーバー種別変更欄を追加
+           送信中スピナー表示
+           日時入力の年4桁対応
+           運用地の入力候補表示
+           localStorageエラーハンドリング追加
+           EBボタン追加・デイリーサマリー対応
+           Service Workerバージョン管理対応
+================================================================
+-->
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -285,9 +304,12 @@
 <div class="flash" id="flash">✓ 記録しました</div>
 
 <div class="header">
-  <h1>OPERATION LOG</h1>
+  <h1>OPERATION LOG <span style="font-size:14px;font-weight:400;opacity:0.6;">V2</span></h1>
   <p id="header-date"></p>
-  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ ライト</button>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="header-version" style="font-size:10px;color:var(--border);font-family:'Share Tech Mono',monospace;"></span>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ ライト</button>
+  </div>
 </div>
 
 <!-- 自局QTHバー -->
@@ -761,13 +783,6 @@
         <button class="btn-rst" data-cat="特小" onclick="selectEditCat(this)">特小</button>
         <button class="btn-rst" data-cat="CB"  onclick="selectEditCat(this)">CB</button>
       </div>
-
-      <!-- 種別 -->
-      <div class="edit-section-label">トランシーバー種別</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:4px;" id="edit-cat-btns">
-        <button class="btn-rst" data-cat="DCR" onclick="selectEditCat(this)">DCR</button>
-        <button class="btn-rst" data-cat="LCR" onclick="selectEditCat(this)">LCR</button>
-        <button class="btn-rst" data-cat="特小" onclick="selectEditCat(this)">特小</button>
         <button class="btn-rst" data-cat="CB"  onclick="selectEditCat(this)">CB</button>
       </div>
 
@@ -827,6 +842,10 @@
 </div>
 
 <script>
+// ============================================================
+// ★ バージョン番号 ★　更新時はここだけ書き換えてください
+const VERSION = '2.0.0'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+// ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
   // 3文字
@@ -1087,6 +1106,8 @@ const state = { cat: '', rstRx: '', rstTx: '', rstCbl: false, tokushoMode: '', d
 function init() {
   const now = new Date();
   const days = ['日','月','火','水','木','金','土'];
+  const verEl = document.getElementById('header-version');
+  if (verEl) verEl.textContent = 'ver.' + VERSION;
   document.getElementById('header-date').textContent =
     `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
   renderMyQTH();
@@ -1980,10 +2001,6 @@ function openEditModal(id) {
   document.querySelectorAll('#edit-cat-btns .btn-rst').forEach(b => {
     b.classList.toggle('active', b.dataset.cat === log.cat);
   });
-  // 種別ボタンをセット
-  document.querySelectorAll('#edit-cat-btns .btn-rst').forEach(b => {
-    b.classList.toggle('active', b.dataset.cat === log.cat);
-  });
   document.getElementById('edit-callsign').value = log.csBase || log.cs || '';
   document.getElementById('edit-portable').value = log.portable || '';
   document.getElementById('edit-rst-tx').value = log.rstTx || '';
@@ -1995,11 +2012,6 @@ function openEditModal(id) {
   document.getElementById('edit-memo').value   = log.memo   || '';
 
   document.getElementById('edit-modal').classList.add('show');
-}
-
-function selectEditCat(btn) {
-  document.querySelectorAll('#edit-cat-btns .btn-rst').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
 }
 
 function selectEditCat(btn) {
@@ -2096,8 +2108,17 @@ init();
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/operation-log/service-worker.js')
-      .then(reg => console.log('SW registered:', reg.scope))
+      .then(reg => {
+        console.log('SW registered:', reg.scope);
+        // バージョンが変わったら即座に更新
+        reg.update();
+      })
       .catch(err => console.log('SW registration failed:', err));
+  });
+  // 新しいSWが有効になったらページをリロード
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('SW updated, reloading...');
+    window.location.reload();
   });
 }
 </script>

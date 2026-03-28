@@ -1,43 +1,77 @@
-const CACHE_NAME = 'operation-log-v4';
-const FILES_TO_CACHE = [
+// ================================================================
+// OPERATION LOG Service Worker
+// Version  : 2.0.0
+// Updated  : 2026-03-28
+// Author   : JQ3JQO / KyotoDR120
+// Changes  : 初回正式リリース
+//            バージョン管理・古いキャッシュ自動削除対応
+// ★ バージョン変更時はSW_VERSIONとHTMLのVERSIONを合わせること
+// ================================================================
+
+// ============================================================
+// ★ Service Worker バージョン ★
+// HTMLのVERSIONと合わせて更新してください
+const SW_VERSION = '2.0.0';
+// ============================================================
+
+const CACHE_NAME = 'oplog-cache-v' + SW_VERSION;
+
+const CACHE_FILES = [
+  '/operation-log/',
+  '/operation-log/index.html',
   '/operation-log/operation_log_v2.html',
-  '/operation-log/manifest.json'
+  '/operation-log/operation_log_lo.html',
 ];
 
-// インストール時にキャッシュに保存
-self.addEventListener('install', e => {
-  e.waitUntil(
+// インストール：新バージョンのキャッシュを作成
+self.addEventListener('install', event => {
+  console.log('[SW] Installing version:', SW_VERSION);
+  event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(FILES_TO_CACHE);
+      return cache.addAll(CACHE_FILES);
+    }).then(() => {
+      // 旧バージョンを待たずに即座に有効化
+      return self.skipWaiting();
     })
   );
-  self.skipWaiting();
 });
 
-// 古いキャッシュを削除
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
-    )
+// アクティベート：古いバージョンのキャッシュを削除
+self.addEventListener('activate', event => {
+  console.log('[SW] Activating version:', SW_VERSION);
+  event.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
+          })
+      );
+    }).then(() => {
+      // 全クライアントを即座にコントロール下に置く
+      return self.clients.claim();
+    })
   );
-  self.clients.claim();
 });
 
-// リクエスト時：キャッシュがあればキャッシュから返す
-// なければネットワークから取得してキャッシュに保存
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => {
+// フェッチ：キャッシュ優先、なければネットワーク
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(response => {
-        if (!response || response.status !== 200) return response;
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+      return fetch(event.request).then(response => {
+        // 成功したレスポンスはキャッシュに追加
+        if (response && response.status === 200 && response.type === 'basic') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
         return response;
-      }).catch(() => cached);
+      });
+    }).catch(() => {
+      // オフライン時はキャッシュから返す
+      return caches.match('/operation-log/operation_log_lo.html');
     })
   );
 });
