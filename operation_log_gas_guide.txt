@@ -142,6 +142,11 @@ function doGet(e) {
         const obj = {};
         headers.forEach((h, i) => { obj[h] = row[i]; });
 
+        const rawCs = String(obj['コールサイン'] || '');
+        const slashIdx = rawCs.indexOf('/');
+        const csBase = slashIdx >= 0 ? rawCs.slice(0, slashIdx) : rawCs;
+        const portable = slashIdx >= 0 ? rawCs.slice(slashIdx + 1) : (obj['ポータブル'] || '');
+
         return {
           id:           Number(obj['ID'])   || Date.now(),
           ts:           obj['日時'] ? new Date(obj['日時']).toISOString() : new Date().toISOString(),
@@ -150,10 +155,10 @@ function doGet(e) {
           tokushoMode:  obj['特小交信方法']   || '',
           repeaterName: obj['特小レピーター名'] || '',
           lcrDistance:  obj['LCR距離(km)']   || '',
-          cs:           obj['コールサイン']   || '',
-          csBase:       obj['コールサイン']   || '',
-          csNorm:       obj['コールサイン']   || '',
-          portable:     obj['ポータブル']     || '',
+          cs:           rawCs,
+          csBase:       csBase,
+          csNorm:       csBase,
+          portable:     portable,
           rstTx:        String(obj['送信RST'] || ''),
           rstRx:        String(obj['受信RST'] || ''),
           pref:         obj['相手局_都道府県'] || '',
