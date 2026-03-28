@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG Lo
-Version  : 2.0.9
+Version  : 2.1.0
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.9 バージョンをV2版に同期
@@ -321,6 +321,10 @@ Changes  : 2.0.9 バージョンをV2版に同期
 <div class="modal-overlay" id="myqth-modal">
   <div class="modal">
     <h2>自局の運用地を設定</h2>
+    <div id="my-qth-history" style="display:none;margin-bottom:12px;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:700;">最近使った運用地</div>
+      <div id="my-qth-history-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
     <div class="modal-row">
       <div class="modal-label">都道府県</div>
       <select class="qth-select" id="my-pref"></select>
@@ -793,7 +797,7 @@ Changes  : 2.0.9 バージョンをV2版に同期
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.0.9'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.1.0'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ============================================================
 // ★ standalone版 TODO LIST【正式リリース前に対応すること】★
