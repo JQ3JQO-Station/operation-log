@@ -2,10 +2,11 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.0.2
+Version  : 2.0.3
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
-Changes  : 2.0.2 スプレッドシートから復元のfetch処理を修正
+Changes  : 2.0.3 編集ウィンドウの種別ボタン重複を修正
+           2.0.2 スプレッドシートから復元のfetch処理を修正
            2.0.1 スプレッドシートから復元機能を追加
            2.0.0 初回正式リリース
            RSTボタン送受信を同じ構成に統一
@@ -787,8 +788,6 @@ Changes  : 2.0.2 スプレッドシートから復元のfetch処理を修正
         <button class="btn-rst" data-cat="特小" onclick="selectEditCat(this)">特小</button>
         <button class="btn-rst" data-cat="CB"  onclick="selectEditCat(this)">CB</button>
       </div>
-        <button class="btn-rst" data-cat="CB"  onclick="selectEditCat(this)">CB</button>
-      </div>
 
       <!-- RST -->
       <div class="edit-section-label">レポート</div>
@@ -848,7 +847,7 @@ Changes  : 2.0.2 スプレッドシートから復元のfetch処理を修正
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.0.2'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.0.3'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
