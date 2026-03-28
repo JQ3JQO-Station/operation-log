@@ -1,9 +1,10 @@
 // ================================================================
 // OPERATION LOG Service Worker
-// Version  : 2.0.7
+// Version  : 2.0.8
 // Updated  : 2026-03-28
 // Author   : JQ3JQO / KyotoDR120
-// Changes  : 2.0.4 SW_VERSIONをHTMLと同期
+// Changes  : 2.0.8 フェッチ戦略をネットワーク優先に変更
+//            2.0.4 SW_VERSIONをHTMLと同期
 //            2.0.0 初回正式リリース
 // ★ バージョン変更時はSW_VERSIONとHTMLのVERSIONを合わせること
 // ================================================================
@@ -11,7 +12,7 @@
 // ============================================================
 // ★ Service Worker バージョン ★
 // HTMLのVERSIONと合わせて更新してください
-const SW_VERSION = '2.0.7';
+const SW_VERSION = '2.0.8';
 // ============================================================
 
 const CACHE_NAME = 'oplog-cache-v' + SW_VERSION;
@@ -56,22 +57,21 @@ self.addEventListener('activate', event => {
   );
 });
 
-// フェッチ：キャッシュ優先、なければネットワーク
+// フェッチ：ネットワーク優先、失敗時はキャッシュから返す
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        // 成功したレスポンスはキャッシュに追加
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      });
+    fetch(event.request).then(response => {
+      // 成功したらキャッシュを更新して返す
+      if (response && response.status === 200 && response.type === 'basic') {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      }
+      return response;
     }).catch(() => {
       // オフライン時はキャッシュから返す
-      return caches.match('/operation-log/operation_log_lo.html');
+      return caches.match(event.request).then(cached => {
+        return cached || caches.match('/operation-log/operation_log_lo.html');
+      });
     })
   );
 });
