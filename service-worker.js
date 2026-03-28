@@ -1,17 +1,17 @@
 // ================================================================
 // OPERATION LOG Service Worker
-// Version  : 2.0.0
+// Version  : 2.0.4
 // Updated  : 2026-03-28
 // Author   : JQ3JQO / KyotoDR120
-// Changes  : 初回正式リリース
-//            バージョン管理・古いキャッシュ自動削除対応
+// Changes  : 2.0.4 SW_VERSIONをHTMLと同期
+//            2.0.0 初回正式リリース
 // ★ バージョン変更時はSW_VERSIONとHTMLのVERSIONを合わせること
 // ================================================================
 
 // ============================================================
 // ★ Service Worker バージョン ★
 // HTMLのVERSIONと合わせて更新してください
-const SW_VERSION = '2.0.0';
+const SW_VERSION = '2.0.4';
 // ============================================================
 
 const CACHE_NAME = 'oplog-cache-v' + SW_VERSION;
