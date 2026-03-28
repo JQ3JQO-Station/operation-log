@@ -132,8 +132,7 @@ function doGet(e) {
       if (lastRow <= 1) {
         return ContentService
           .createTextOutput(JSON.stringify({ result: 'ok', logs: [] }))
-          .setMimeType(ContentService.MimeType.JSON)
-          .setHeaders({ 'Access-Control-Allow-Origin': '*' });
+          .setMimeType(ContentService.MimeType.JSON);
       }
 
       const headers = sheet.getRange(1, 1, 1, 19).getValues()[0];
@@ -143,7 +142,6 @@ function doGet(e) {
         const obj = {};
         headers.forEach((h, i) => { obj[h] = row[i]; });
 
-        // スプレッドシートの列からアプリのデータ形式に変換
         return {
           id:           Number(obj['ID'])   || Date.now(),
           ts:           obj['日時'] ? new Date(obj['日時']).toISOString() : new Date().toISOString(),
@@ -167,12 +165,11 @@ function doGet(e) {
           memo:         obj['メモ']           || '',
           sent:         true
         };
-      }).filter(l => l.cs); // コールサインが空の行は除外
+      }).filter(l => l.cs);
 
       return ContentService
         .createTextOutput(JSON.stringify({ result: 'ok', logs: logs }))
-        .setMimeType(ContentService.MimeType.JSON)
-        .setHeaders({ 'Access-Control-Allow-Origin': '*' });
+        .setMimeType(ContentService.MimeType.JSON);
 
     } catch(err) {
       return ContentService

@@ -2,10 +2,11 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.0.1
+Version  : 2.0.2
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
-Changes  : 2.0.1 スプレッドシートから復元機能を追加
+Changes  : 2.0.2 スプレッドシートから復元のfetch処理を修正
+           2.0.1 スプレッドシートから復元機能を追加
            2.0.0 初回正式リリース
            RSTボタン送受信を同じ構成に統一
            コールサイン候補からポータブル番号を除外
@@ -847,7 +848,7 @@ Changes  : 2.0.1 スプレッドシートから復元機能を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.0.1'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.0.2'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
@@ -1827,13 +1828,18 @@ async function restoreFromSpreadsheet() {
   if (btn) { btn.textContent = '取得中...'; btn.disabled = true; }
 
   try {
-    // GAS URLにGETリクエストでデータ取得
     const url = gasUrl + '?action=getAll';
-    const res = await fetch(url, { method: 'GET', mode: 'cors' });
-    const data = await res.json();
+    const res = await fetch(url);
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(e) {
+      throw new Error('レスポンスの解析に失敗: ' + text.slice(0, 100));
+    }
 
     if (!data || !Array.isArray(data.logs)) {
-      alert('データの取得に失敗しました。\nGASのコードが最新版か確認してください。');
+      alert('データの取得に失敗しました。\nGASのコードが最新版か確認してください。\n\n詳細: ' + JSON.stringify(data));
       return;
     }
 
@@ -1844,7 +1850,6 @@ async function restoreFromSpreadsheet() {
     }
 
     const existing = choice ? getLogs() : [];
-    // 重複IDを除外して結合
     const existingIds = new Set(existing.map(l => String(l.id)));
     const merged = [...existing, ...newLogs.filter(l => !existingIds.has(String(l.id)))];
     saveLogs(merged);
@@ -1854,7 +1859,7 @@ async function restoreFromSpreadsheet() {
 
   } catch(e) {
     console.error('スプレッドシートから復元失敗:', e);
-    alert('データの取得に失敗しました。\nインターネット接続とGAS URLを確認してください。');
+    alert('データの取得に失敗しました。\n' + e.message);
   } finally {
     if (btn) { btn.textContent = origText; btn.disabled = false; }
   }
