@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG Lo
-Version  : 2.2.4
+Version  : 2.2.5
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.9 バージョンをV2版に同期
@@ -802,7 +802,7 @@ Changes  : 2.0.9 バージョンをV2版に同期
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.2.4'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.2.5'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ============================================================
 // ★ standalone版 TODO LIST【正式リリース前に対応すること】★
@@ -1063,7 +1063,7 @@ function renderMyQTH() {
 }
 
 // ===== 状態 =====
-const state = { cat: '', rstRx: '', rstTx: '', rstCbl: false, tokushoMode: '', dcrPower: '' };
+const state = { cat: '', rstRx: '', rstTx: '', rstCbl: false, tokushoMode: '', dcrPower: '', eb: false };
 
 // ===== 初期化 =====
 function init() {
@@ -1089,6 +1089,32 @@ function updateCounter() {
   const todayCount = getLogs().filter(l => new Date(l.ts).toLocaleDateString('ja-JP') === today).length;
   document.getElementById('count').textContent = todayCount;
   // standalone版：入力タブに未送信表示なし
+}
+
+// ===== EB（Eyeball QSO）=====
+function toggleEB() {
+  state.eb = !state.eb;
+  const btn = document.getElementById('btn-eb');
+  if (state.eb) {
+    btn.style.background = 'var(--accent2)';
+    btn.style.borderColor = 'var(--accent2)';
+    btn.style.color = '#fff';
+    // トランシーバー選択を解除
+    document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('active'));
+    state.cat = '';
+    state.tokushoMode = '';
+    state.dcrPower = '';
+    const tokushoCard = document.getElementById('tokusho-mode-card');
+    const dcrCard = document.getElementById('dcr-power-card');
+    const lcrCard = document.getElementById('lcr-distance-card');
+    if (tokushoCard) tokushoCard.style.display = 'none';
+    if (dcrCard) dcrCard.style.display = 'none';
+    if (lcrCard) lcrCard.style.display = 'none';
+  } else {
+    btn.style.background = 'var(--surface2)';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--text2)';
+  }
 }
 
 // ===== コールサイン入力・サジェスト =====
@@ -1148,6 +1174,8 @@ function selectCat(btn) {
   document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   state.cat = btn.dataset.cat;
+  // EBを解除
+  if (state.eb) { state.eb = false; toggleEB(); }
 
   const tokushoCard = document.getElementById('tokusho-mode-card');
   const dcrCard     = document.getElementById('dcr-power-card');
