@@ -1,6 +1,6 @@
 // ================================================================
 // OPERATION LOG Service Worker
-// Version  : 2.2.7
+// Version  : 2.2.8
 // Updated  : 2026-03-28
 // Author   : JQ3JQO / KyotoDR120
 // Changes  : 2.0.8 フェッチ戦略をネットワーク優先に変更
@@ -12,7 +12,7 @@
 // ============================================================
 // ★ Service Worker バージョン ★
 // HTMLのVERSIONと合わせて更新してください
-const SW_VERSION = '2.2.7';
+const SW_VERSION = '2.2.8';
 // ============================================================
 
 const CACHE_NAME = 'oplog-cache-v' + SW_VERSION;
