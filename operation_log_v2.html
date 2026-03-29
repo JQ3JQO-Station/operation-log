@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.2.5
+Version  : 2.2.7
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
@@ -820,7 +820,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
             onblur="this.style.borderColor='var(--border)'"/>
         </div>
       </div>
-      <button onclick="document.getElementById('edit-rst-rx').value='CBL'"
+      <button onclick="var el=document.getElementById('edit-rst-rx');var v=el.value.replace('CBL','').trim();el.value=v?v+'CBL':'CBL';"
         style="width:100%;margin-top:8px;background:var(--surface2);border:2px solid var(--border);
                border-radius:10px;color:var(--text);font-family:'Share Tech Mono',monospace;
                font-size:18px;font-weight:700;padding:10px;cursor:pointer;">CBL</button>
@@ -861,7 +861,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.2.5'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.2.7'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
