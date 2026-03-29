@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.1.9
+Version  : 2.2.1
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
@@ -87,7 +87,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 
   /* テーマ切替ボタン */
   .theme-toggle {
-    position: absolute; top: 36px; right: 0;
+    position: absolute; top: 50%; right: 0; transform: translateY(-50%);
     background: var(--surface2); border: 2px solid var(--border);
     border-radius: 20px; color: var(--text); font-size: 12px; font-weight: 700;
     padding: 6px 12px; cursor: pointer; white-space: nowrap;
@@ -311,9 +311,8 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <div class="flash" id="flash">✓ 記録しました</div>
 
 <div class="header">
-  <h1>OPERATION LOG <span style="font-size:14px;font-weight:400;opacity:0.6;">V2</span></h1>
+  <h1>OPERATION LOG <span style="font-size:14px;font-weight:400;opacity:0.6;">V2</span> <span id="header-version" style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;opacity:0.7;font-weight:400;"></span></h1>
   <p id="header-date"></p>
-  <span id="header-version" style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;opacity:0.7;display:block;margin-top:2px;"></span>
   <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ ライト</button>
 </div>
 
@@ -856,7 +855,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.1.9'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.2.1'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
