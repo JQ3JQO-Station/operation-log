@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.2.3
+Version  : 2.2.4
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
@@ -83,7 +83,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 
   .header { text-align: center; padding: 16px 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
   .header h1 { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 0.12em; font-family: 'Share Tech Mono', monospace; text-shadow: var(--shadow-text); margin-bottom: 6px; }
-  .header-bottom { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .header-bottom { display: flex; align-items: center; justify-content: space-between; }
 
   /* テーマ切替ボタン */
   .theme-toggle {
@@ -313,7 +313,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
   <h1>OPERATION LOG <span style="font-size:14px;font-weight:400;opacity:0.6;">V2</span></h1>
   <div class="header-bottom">
     <span id="header-version" style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;opacity:0.7;"></span>
-    <p id="header-date" style="font-size:14px;color:var(--text2);margin:0;"></p>
+    <p id="header-date" style="font-size:14px;color:var(--text2);margin:0;flex:1;text-align:center;"></p>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ ライト</button>
   </div>
 </div>
@@ -857,7 +857,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.2.3'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.2.4'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
