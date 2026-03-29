@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.1.2
+Version  : 2.1.6
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
@@ -313,10 +313,8 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <div class="header">
   <h1>OPERATION LOG <span style="font-size:14px;font-weight:400;opacity:0.6;">V2</span></h1>
   <p id="header-date"></p>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span id="header-version" style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;opacity:0.7;"></span>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ ライト</button>
-  </div>
+  <span id="header-version" style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;opacity:0.7;display:block;margin-top:2px;"></span>
+  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ ライト</button>
 </div>
 
 <!-- 自局QTHバー -->
@@ -398,6 +396,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
       <button class="btn-cat" data-cat="LCR"  onclick="selectCat(this)">LCR</button>
       <button class="btn-cat" data-cat="特小" onclick="selectCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:18px;font-weight:700;">特小</button>
       <button class="btn-cat" data-cat="CB"   onclick="selectCat(this)">CB</button>
+      <button class="btn-cat" data-cat="EB"   onclick="selectCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:700;">EB</button>
     </div>
   </div>
 
@@ -442,7 +441,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
   <div class="card">
     <div class="card-label">コールサイン</div>
     <div class="suggest-wrap">
-      <div style="display:flex;align-items:stretch;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
         <input class="callsign-input" id="callsign" type="text"
           placeholder="きょうとXX999"
           autocomplete="off" autocorrect="off" spellcheck="false"
@@ -456,16 +455,11 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
           autocomplete="off"
           style="width:56px;text-align:center;flex-shrink:0;"
           oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,1)" />
-        <button id="btn-eb" onclick="toggleEB()"
-          style="flex-shrink:0;background:var(--surface2);border:2px solid var(--border);border-radius:12px;
-                 color:var(--text2);font-size:15px;font-weight:700;padding:0 14px;cursor:pointer;
-                 font-family:'Noto Sans JP',sans-serif;white-space:nowrap;transition:all 0.15s;
-                 box-sizing:border-box;"
-          title="Eyeball QSO（直接会う）">EB</button>
+
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px;">
         <span style="font-size:10px;color:var(--text2);">コールサイン（空欄可）</span>
-        <span style="font-size:10px;color:var(--text2);">ポータブル（不要なら空欄）　　EB</span>
+        <span style="font-size:10px;color:var(--text2);">ポータブル（不要なら空欄）</span>
       </div>
       <div class="suggest-list" id="suggest-list"></div>
     </div>
@@ -476,7 +470,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
     <div class="card-label">レポート</div>
     <div class="rst-row">
       <div class="rst-row-inner">
-        <div class="rst-side-label">送信</div>
+        <div class="rst-side-label">送信<br><span style="font-size:10px;font-weight:400;opacity:0.7;">自分→相手</span></div>
         <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
           <input type="tel" id="rst-tx-free" maxlength="3"
             placeholder="00"
@@ -496,7 +490,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
         </div>
       </div>
       <div class="rst-row-inner">
-        <div class="rst-side-label">受信</div>
+        <div class="rst-side-label">受信<br><span style="font-size:10px;font-weight:400;opacity:0.7;">相手→自分</span></div>
         <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
           <input type="tel" id="rst-rx-free" maxlength="3"
             placeholder="00"
@@ -793,8 +787,9 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:4px;" id="edit-cat-btns">
         <button class="btn-rst" data-cat="DCR" onclick="selectEditCat(this)">DCR</button>
         <button class="btn-rst" data-cat="LCR" onclick="selectEditCat(this)">LCR</button>
-        <button class="btn-rst" data-cat="特小" onclick="selectEditCat(this)">特小</button>
+        <button class="btn-rst" data-cat="特小" onclick="selectEditCat(this)" style="font-family:'Noto Sans JP',sans-serif;">特小</button>
         <button class="btn-rst" data-cat="CB"  onclick="selectEditCat(this)">CB</button>
+        <button class="btn-rst" data-cat="EB"  onclick="selectEditCat(this)" style="font-family:'Noto Sans JP',sans-serif;">EB</button>
       </div>
 
       <!-- RST -->
@@ -847,6 +842,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
     </div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeEditModal()">キャンセル</button>
+      <button onclick="deleteEditLog()" style="background:var(--danger);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;padding:12px 16px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">削除</button>
       <button class="btn-modal-ok" onclick="saveEditLog()">保存する</button>
     </div>
   </div>
@@ -855,7 +851,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.1.2'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.1.6'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
@@ -1111,7 +1107,7 @@ function renderMyQTH() {
 }
 
 // ===== 状態 =====
-const state = { cat: '', rstRx: '', rstTx: '', rstCbl: false, tokushoMode: '', dcrPower: '', eb: false };
+const state = { cat: '', rstRx: '', rstTx: '', rstCbl: false, tokushoMode: '', dcrPower: '' };
 
 // ===== 初期化 =====
 function init() {
@@ -1143,21 +1139,6 @@ function updateCounter() {
   const todayCount = getLogs().filter(l => new Date(l.ts).toLocaleDateString('ja-JP') === today).length;
   document.getElementById('count').textContent = todayCount;
   updatePendingInline();
-}
-
-// ===== EB（Eyeball QSO）=====
-function toggleEB() {
-  state.eb = !state.eb;
-  const btn = document.getElementById('btn-eb');
-  if (state.eb) {
-    btn.style.background = 'var(--accent2)';
-    btn.style.borderColor = 'var(--accent2)';
-    btn.style.color = '#fff';
-  } else {
-    btn.style.background = 'var(--surface2)';
-    btn.style.borderColor = 'var(--border)';
-    btn.style.color = 'var(--text2)';
-  }
 }
 
 // ===== コールサイン入力・サジェスト =====
@@ -1218,33 +1199,35 @@ function selectCat(btn) {
   btn.classList.add('active');
   state.cat = btn.dataset.cat;
 
-  // 特小選択時だけ交信方法カードを表示
   const tokushoCard = document.getElementById('tokusho-mode-card');
-  if (state.cat === '特小') {
-    tokushoCard.style.display = 'block';
-  } else {
-    tokushoCard.style.display = 'none';
-    state.tokushoMode = '';
-    document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
+  const dcrCard     = document.getElementById('dcr-power-card');
+  const lcrCard     = document.getElementById('lcr-distance-card');
+
+  // 特小交信方法カード
+  if (tokushoCard) {
+    tokushoCard.style.display = state.cat === '特小' ? 'block' : 'none';
+    if (state.cat !== '特小') {
+      state.tokushoMode = '';
+      document.querySelectorAll('#tokusho-mode-card .btn-cat').forEach(b => b.classList.remove('active'));
+    }
   }
 
-  // DCR選択時だけ出力カードを表示
-  const dcrCard = document.getElementById('dcr-power-card');
-  if (state.cat === 'DCR') {
-    dcrCard.style.display = 'block';
-  } else {
-    dcrCard.style.display = 'none';
-    state.dcrPower = '';
-    document.querySelectorAll('#dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
+  // DCR出力カード
+  if (dcrCard) {
+    dcrCard.style.display = state.cat === 'DCR' ? 'block' : 'none';
+    if (state.cat !== 'DCR') {
+      state.dcrPower = '';
+      document.querySelectorAll('#dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
+    }
   }
 
-  // LCR選択時だけ距離カードを表示
-  const lcrCard = document.getElementById('lcr-distance-card');
-  if (state.cat === 'LCR') {
-    lcrCard.style.display = 'block';
-  } else {
-    lcrCard.style.display = 'none';
-    document.getElementById('lcr-distance').value = '';
+  // LCR距離カード
+  if (lcrCard) {
+    lcrCard.style.display = state.cat === 'LCR' ? 'block' : 'none';
+    if (state.cat !== 'LCR') {
+      const lcrInput = document.getElementById('lcr-distance');
+      if (lcrInput) lcrInput.value = '';
+    }
   }
 }
 
@@ -1331,8 +1314,9 @@ function submitLog() {
   const detail = document.getElementById('qth-detail').value.trim();
 
   if (!state.cat)  { alert('トランシーバーを選択してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
+  const isEB = state.cat === 'EB';
   if (!cs)         { alert('コールサインを入力してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
-  if (!pref)       { alert('都道府県を選択してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
+  if (!pref && !isEB) { alert('都道府県を選択してください'); submitBtn.disabled=false; submitBtn.textContent='記録する'; submitBtn.style.opacity='1'; return; }
   const rstRxVal = state.rstRx + (state.rstCbl ? 'CBL' : '');
   const rstTxVal = state.rstCbl ? '' : state.rstTx;
 
@@ -1360,7 +1344,7 @@ function submitLog() {
     myCity:   myQTH ? myQTH.city   : '',
     myDetail: myQTH ? myQTH.detail : '',
     memo: document.getElementById('memo').value.trim() || '',
-    eb: state.eb,
+    eb: isEB,
     sent: false
   };
 
@@ -1397,13 +1381,19 @@ function submitLog() {
   state.rstCbl = false;
   state.tokushoMode = '';
   state.dcrPower = '';
-  document.querySelectorAll('#tokusho-mode-card .btn-cat, #dcr-power-card .btn-cat').forEach(b => b.classList.remove('active'));
+  // トランシーバー種別もリセット
+  document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('active'));
+  state.cat = '';
+  const tokushoCard = document.getElementById('tokusho-mode-card');
+  if (tokushoCard) tokushoCard.style.display = 'none';
+  const dcrCard = document.getElementById('dcr-power-card');
+  if (dcrCard) dcrCard.style.display = 'none';
+  state.tokushoMode = '';
+  state.dcrPower = '';
   if (document.getElementById('lcr-distance')) document.getElementById('lcr-distance').value = '';
   if (document.getElementById('repeater-name')) document.getElementById('repeater-name').value = '';
   if (document.getElementById('repeater-name-row')) document.getElementById('repeater-name-row').style.display = 'none';
   document.getElementById('memo').value = '';
-  // EBをリセット
-  if (state.eb) { state.eb = false; toggleEB(); }
   setNowDatetime(); // 日時欄を現在時刻にリセット
 
   updateCounter();
@@ -1451,8 +1441,8 @@ function renderLog() {
     dailyText = '本日の記録はありません';
   } else {
     // EBログを分離
-    const ebLogs = todayLogs.filter(l => l.eb);
-    const normalLogs = todayLogs.filter(l => !l.eb);
+    const ebLogs = todayLogs.filter(l => l.eb || l.cat === 'EB');
+    const normalLogs = todayLogs.filter(l => !l.eb && l.cat !== 'EB');
 
     const groups = {};
     normalLogs.forEach(l => {
@@ -1548,7 +1538,7 @@ function renderLog() {
     const qth = [l.pref, l.city, l.detail].filter(Boolean).join(' ');
     const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
     const cs = l.cs || '';
-    const ebBadge = l.eb ? '<span style="background:var(--accent2);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;">EB</span>' : '';
+    const ebBadge = (l.eb || l.cat === 'EB') ? '<span style="background:var(--accent2);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;">EB</span>' : '';
     return `<div class="log-item">
       <div class="log-item-top">
         <span class="log-cat">${l.cat || ''}</span>
@@ -2103,6 +2093,20 @@ function selectEditCat(btn) {
 function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('show');
   _editingLogId = null;
+}
+
+function deleteEditLog() {
+  if (!_editingLogId) return;
+  const logs = getLogs();
+  const log = logs.find(l => String(l.id) === String(_editingLogId));
+  if (!log) return;
+  const cs = log.cs || '';
+  if (!confirm(`このログを削除しますか？\n\n${cs}\nこの操作は元に戻せません。`)) return;
+  const newLogs = logs.filter(l => String(l.id) !== String(_editingLogId));
+  saveLogs(newLogs);
+  closeEditModal();
+  renderLog();
+  updateCounter();
 }
 
 function saveEditLog() {
