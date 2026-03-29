@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.1.6
+Version  : 2.1.7
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
@@ -87,7 +87,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 
   /* テーマ切替ボタン */
   .theme-toggle {
-    position: absolute; top: 50%; right: 0; transform: translateY(-50%);
+    position: absolute; bottom: 14px; right: 0;
     background: var(--surface2); border: 2px solid var(--border);
     border-radius: 20px; color: var(--text); font-size: 12px; font-weight: 700;
     padding: 6px 12px; cursor: pointer; white-space: nowrap;
@@ -396,7 +396,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
       <button class="btn-cat" data-cat="LCR"  onclick="selectCat(this)">LCR</button>
       <button class="btn-cat" data-cat="特小" onclick="selectCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:18px;font-weight:700;">特小</button>
       <button class="btn-cat" data-cat="CB"   onclick="selectCat(this)">CB</button>
-      <button class="btn-cat" data-cat="EB"   onclick="selectCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:700;">EB</button>
+
     </div>
   </div>
 
@@ -441,7 +441,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
   <div class="card">
     <div class="card-label">コールサイン</div>
     <div class="suggest-wrap">
-      <div style="display:flex;align-items:center;gap:8px;">
+      <div style="display:flex;align-items:stretch;gap:8px;">
         <input class="callsign-input" id="callsign" type="text"
           placeholder="きょうとXX999"
           autocomplete="off" autocorrect="off" spellcheck="false"
@@ -455,11 +455,16 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
           autocomplete="off"
           style="width:56px;text-align:center;flex-shrink:0;"
           oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,1)" />
-
+        <button id="btn-eb" onclick="toggleEB()"
+          style="flex-shrink:0;background:var(--surface2);border:2px solid var(--border);border-radius:12px;
+                 color:var(--text2);font-size:15px;font-weight:700;padding:0 14px;cursor:pointer;
+                 font-family:'Noto Sans JP',sans-serif;white-space:nowrap;transition:all 0.15s;
+                 box-sizing:border-box;"
+          title="Eyeball QSO（直接会う）">EB</button>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px;">
         <span style="font-size:10px;color:var(--text2);">コールサイン（空欄可）</span>
-        <span style="font-size:10px;color:var(--text2);">ポータブル（不要なら空欄）</span>
+        <span style="font-size:10px;color:var(--text2);">ポータブル（不要なら空欄）　　EB</span>
       </div>
       <div class="suggest-list" id="suggest-list"></div>
     </div>
@@ -851,7 +856,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.1.6'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.1.7'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
@@ -2153,19 +2158,28 @@ function saveEditLog() {
 
   // GASへ修正データを再送信（設定済みの場合）
   const gasUrl = getGasUrl();
+  const flash = document.getElementById('flash');
   if (gasUrl) {
     fetch(gasUrl, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify(logs[idx]),
       headers: { 'Content-Type': 'application/json' }
-    }).catch(err => console.error('GAS再送信失敗:', err));
+    }).then(() => {
+      flash.textContent = `✓  ${csDisplay}  を修正・スプレッドシートを更新しました`;
+      flash.classList.add('show');
+      setTimeout(() => flash.classList.remove('show'), 3000);
+    }).catch(err => {
+      console.error('GAS再送信失敗:', err);
+      flash.textContent = `✓  ${csDisplay}  を修正しました（クラウド更新失敗）`;
+      flash.classList.add('show');
+      setTimeout(() => flash.classList.remove('show'), 3000);
+    });
+  } else {
+    flash.textContent = `✓  ${csDisplay}  を修正しました`;
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 2000);
   }
-
-  const flash = document.getElementById('flash');
-  flash.textContent = `✓  ${csDisplay}  を修正しました`;
-  flash.classList.add('show');
-  setTimeout(() => flash.classList.remove('show'), 2000);
 }
 
 // ===== テーマ切替 =====
