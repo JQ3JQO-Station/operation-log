@@ -314,7 +314,7 @@ Changes  : 3.0.0-dev 距離機能テスト実装
   .map-header-title { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; }
   .map-search-row {
     background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 10px 16px; display: flex; gap: 8px; flex-shrink: 0;
+    padding: 10px 16px; display: flex; gap: 8px; flex-shrink: 0; overflow: hidden;
   }
   .map-search-input {
     flex: 1; background: var(--surface2); border: 2px solid var(--border);
@@ -479,8 +479,7 @@ Changes  : 3.0.0-dev 距離機能テスト実装
 <div class="nav-btns">
   <button class="nav-btn active" onclick="switchTab('input',this)">入力</button>
   <button class="nav-btn" onclick="switchTab('log',this)">ログ一覧 ／ 検索</button>
-  <button class="nav-btn" onclick="switchTab('ranking',this)">距離</button>
-  <button class="nav-btn" onclick="switchTab('data',this)">データ</button>
+  <button class="nav-btn" onclick="switchTab('data',this)">データ管理</button>
 </div>
 
 <!-- 入力パネル -->
@@ -720,10 +719,8 @@ Changes  : 3.0.0-dev 距離機能テスト実装
     <div class="card-label">ログ一覧 <span id="log-total" style="font-size:13px;color:var(--text2);font-weight:400;"></span></div>
     <div id="log-list"></div>
   </div>
-</div>
 
-<!-- 距離ランキングタブ -->
-<div class="tab-pane" id="tab-ranking">
+  <!-- 距離ランキング -->
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
       <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">距離ランキング</div>
@@ -778,8 +775,9 @@ Changes  : 3.0.0-dev 距離機能テスト実装
   <div class="map-offline-note" id="map-offline-note">⚠ オフライン中 — 地名検索は使用できません。地図タップでピンを設定できます。</div>
   <div class="map-search-row">
     <input class="map-search-input" id="map-search-input" type="text" placeholder="山名・地名で検索（例：比叡山）" autocomplete="off"
+      style="min-width:0;"
       onkeydown="if(event.key==='Enter')searchLocation()"/>
-    <button class="map-search-btn" onclick="searchLocation()">検索</button>
+    <button class="map-search-btn" onclick="searchLocation()" style="flex-shrink:0;">検索</button>
   </div>
   <div class="map-search-results" id="map-search-results"></div>
   <div id="map-container"></div>
@@ -963,12 +961,12 @@ Changes  : 3.0.0-dev 距離機能テスト実装
         ※ DCR・特小・CB：「相手局の運用地を設定」で地図からピン指定すると距離が自動計算されます。<br>
         ※ 地図機能はオンライン環境でご使用ください。
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;box-sizing:border-box;width:100%;">
         <span style="font-size:14px;color:var(--text2);font-weight:700;white-space:nowrap;min-width:52px;">距離</span>
         <input type="tel" id="edit-distance" maxlength="7" placeholder="例：25.3"
-          style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+          style="flex:1;min-width:0;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
                  color:var(--text);font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:700;
-                 padding:12px;text-align:center;outline:none;"
+                 padding:12px;text-align:center;outline:none;box-sizing:border-box;"
           onfocus="this.style.borderColor='var(--accent2)'"
           onblur="this.style.borderColor='var(--border)'"
           oninput="this.value=this.value.replace(/[^0-9.]/g,'')"/>
@@ -1594,7 +1592,6 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'log') renderLog();
-  if (tab === 'ranking') renderRanking();
 }
 
 function renderLog() {
@@ -1732,6 +1729,8 @@ function renderLog() {
       </div>
     </div>`;
   }).join('');
+
+  renderRanking();
 }
 
 let searchCat = '全て';
