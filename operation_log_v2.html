@@ -2,7 +2,7 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.2.8
+Version  : 2.3.0
 Updated  : 2026-03-28
 Author   : JQ3JQO / KyotoDR120
 Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
@@ -321,7 +321,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <!-- 自局QTHバー -->
 <div class="myqth-bar" onclick="openMyQTH()">
   <div>
-    <div class="label">自局 QTH（運用地）</div>
+    <div class="label">自局運用地</div>
     <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
   </div>
   <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
@@ -523,7 +523,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 
   <!-- QTH -->
   <div class="card">
-    <div class="card-label">QTH</div>
+    <div class="card-label">交信相手運用地</div>
     <div class="qth-row">
       <div class="qth-label-sm">都道府県</div>
       <select class="qth-select" id="qth-pref"></select>
@@ -826,7 +826,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
                font-size:18px;font-weight:700;padding:10px;cursor:pointer;">CBL</button>
 
       <!-- QTH -->
-      <div class="edit-section-label">相手局 QTH</div>
+      <div class="edit-section-label">交信相手運用地</div>
       <div class="qth-row">
         <div class="qth-label-sm">都道府県</div>
         <select class="qth-select" id="edit-pref"></select>
@@ -861,7 +861,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.2.8'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.3.0'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
