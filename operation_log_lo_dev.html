@@ -705,6 +705,29 @@ Changes  : 3.0.0-dev 距離機能テスト実装
     <div id="search-result-date-list"></div>
   </div>
 
+  <!-- 距離ランキング -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;">
+      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">距離ランキング</div>
+      <button id="btn-ranking-toggle" onclick="toggleRanking()"
+        style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text2);font-size:14px;font-weight:700;padding:8px 16px;
+               cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">
+        表示する
+      </button>
+    </div>
+    <!-- 展開後：種別選択ボタン＋結果 -->
+    <div id="ranking-panel" style="display:none;margin-top:14px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;" id="ranking-cat-btns">
+        <button class="btn-cat active" data-cat="DCR" onclick="selectRankingCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">DCR</button>
+        <button class="btn-cat" data-cat="LCR" onclick="selectRankingCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">LCR</button>
+        <button class="btn-cat" data-cat="特小" onclick="selectRankingCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">特小</button>
+        <button class="btn-cat" data-cat="CB" onclick="selectRankingCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">CB</button>
+      </div>
+      <div id="ranking-list"></div>
+    </div>
+  </div>
+
   <!-- デイリーサマリー -->
   <div class="card" id="daily-summary-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
@@ -718,15 +741,6 @@ Changes  : 3.0.0-dev 距離機能テスト実装
   <div class="card">
     <div class="card-label">ログ一覧 <span id="log-total" style="font-size:13px;color:var(--text2);font-weight:400;"></span></div>
     <div id="log-list"></div>
-  </div>
-
-  <!-- 距離ランキング -->
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
-      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">距離ランキング</div>
-      <span style="font-size:12px;color:var(--text2);">種別別TOP10・距離長い順</span>
-    </div>
-    <div id="ranking-list"></div>
   </div>
 </div>
 
@@ -1729,8 +1743,6 @@ function renderLog() {
       </div>
     </div>`;
   }).join('');
-
-  renderRanking();
 }
 
 let searchCat = '全て';
@@ -2319,51 +2331,59 @@ function confirmMapLocation() {
 }
 
 // ===== 距離ランキング =====
+let _rankingOpen = false;
+let _rankingCat = 'DCR';
+
+function toggleRanking() {
+  _rankingOpen = !_rankingOpen;
+  const panel = document.getElementById('ranking-panel');
+  const btn = document.getElementById('btn-ranking-toggle');
+  panel.style.display = _rankingOpen ? 'block' : 'none';
+  btn.textContent = _rankingOpen ? '閉じる' : '表示する';
+  if (_rankingOpen) renderRanking();
+}
+
+function selectRankingCat(btn) {
+  document.querySelectorAll('#ranking-cat-btns .btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _rankingCat = btn.dataset.cat;
+  renderRanking();
+}
+
 function renderRanking() {
-  const CAT_ORDER = ['DCR', 'LCR', '特小', 'CB'];
-  const logs = getLogs();
   const container = document.getElementById('ranking-list');
+  if (!container) return;
+  const logs = getLogs();
 
-  // 距離があるログのみ抽出（distance または lcrDistance）
-  const withDist = logs.filter(l => {
-    const d = parseFloat(l.distance || l.lcrDistance || '');
-    return !isNaN(d) && d > 0;
-  });
+  // 距離があるログのみ・選択種別でフィルター
+  const catLogs = logs
+    .filter(l => {
+      if (l.cat !== _rankingCat) return false;
+      const d = parseFloat(l.distance || l.lcrDistance || '');
+      return !isNaN(d) && d > 0;
+    })
+    .sort((a, b) => {
+      return parseFloat(b.distance || b.lcrDistance || 0) - parseFloat(a.distance || a.lcrDistance || 0);
+    })
+    .slice(0, 10);
 
-  if (withDist.length === 0) {
-    container.innerHTML = '<div class="empty-msg">距離が記録されたログがありません</div>';
+  if (catLogs.length === 0) {
+    container.innerHTML = `<div class="empty-msg">${_rankingCat} の距離記録がありません</div>`;
     return;
   }
 
-  let html = '';
-  CAT_ORDER.forEach(cat => {
-    const catLogs = withDist
-      .filter(l => l.cat === cat)
-      .sort((a, b) => {
-        const da = parseFloat(a.distance || a.lcrDistance || 0);
-        const db = parseFloat(b.distance || b.lcrDistance || 0);
-        return db - da;
-      })
-      .slice(0, 10);
-
-    if (catLogs.length === 0) return;
-
-    html += `<div class="ranking-cat-label">${cat}　距離TOP${catLogs.length}</div>`;
-    catLogs.forEach((l, i) => {
-      const dist = parseFloat(l.distance || l.lcrDistance || 0);
-      const d = new Date(l.ts);
-      const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
-      const numClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-      html += `<div class="ranking-item" onclick="openLogDetail('${l.id}')">
-        <span class="ranking-num ${numClass}">${i+1}</span>
-        <span class="ranking-dist">${dist}km</span>
-        <span class="ranking-cs">${l.cs || ''}</span>
-        <span class="ranking-date">${dateStr}</span>
-      </div>`;
-    });
-  });
-
-  container.innerHTML = html || '<div class="empty-msg">距離が記録されたログがありません</div>';
+  container.innerHTML = catLogs.map((l, i) => {
+    const dist = parseFloat(l.distance || l.lcrDistance || 0);
+    const d = new Date(l.ts);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    const numClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    return `<div class="ranking-item" onclick="openLogDetail('${l.id}')">
+      <span class="ranking-num ${numClass}">${i+1}</span>
+      <span class="ranking-dist">${dist}km</span>
+      <span class="ranking-cs">${l.cs || ''}</span>
+      <span class="ranking-date">${dateStr}</span>
+    </div>`;
+  }).join('');
 }
 
 // ===== ログ詳細表示（ランキングからタップ） =====
