@@ -2390,23 +2390,7 @@ function openLogDetail(id) {
 
 init();
 
-// Service Worker登録（PWA・オフライン対応）
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/operation-log/service-worker.js')
-      .then(reg => {
-        console.log('SW registered:', reg.scope);
-        // バージョンが変わったら即座に更新
-        reg.update();
-      })
-      .catch(err => console.log('SW registration failed:', err));
-  });
-  // 新しいSWが有効になったらページをリロード
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('SW updated, reloading...');
-    window.location.reload();
-  });
-}
+// DEV版：Service Worker登録なし（テスト版はSW不要）
 </script>
 </body>
 </html>
