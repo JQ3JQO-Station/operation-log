@@ -2293,9 +2293,9 @@ function getMyGPS() {
 function getStoredMyGps() {
   // セッション中に取得済みならそれを使用
   if (_myGpsLat !== null) return { lat: _myGpsLat, lng: _myGpsLng };
-  // localStorageから取得（1時間以内のみ有効）
+  // localStorageから取得（24時間以内のみ有効）
   const stored = JSON.parse(localStorage.getItem('my_gps') || 'null');
-  if (stored && (Date.now() - stored.ts) < 3600000) return { lat: stored.lat, lng: stored.lng };
+  if (stored && (Date.now() - stored.ts) < 86400000) return { lat: stored.lat, lng: stored.lng };
   return null;
 }
 
@@ -2416,7 +2416,6 @@ function confirmMapLocation() {
     alert('地図をタップして運用地を設定してください');
     return;
   }
-  // 自局座標と組み合わせて距離計算
   const myGps = getStoredMyGps();
   const coordsEl = document.getElementById('edit-coords-display');
   coordsEl.textContent = `相手局座標：${_mapPendingLat.toFixed(5)}, ${_mapPendingLng.toFixed(5)}`;
@@ -2425,7 +2424,8 @@ function confirmMapLocation() {
     document.getElementById('edit-distance').value = dist;
     coordsEl.textContent += `　→　距離：${dist}km`;
   } else {
-    coordsEl.textContent += '　（自局GPS未取得のため距離未計算）';
+    coordsEl.textContent += '　（距離未計算）';
+    alert('自局のGPS座標が取得されていません。\n入力タブの「📍 現在地を取得」で運用地のGPS座標を取得してから再度お試しください。\n距離欄に直接数値を入力することもできます。');
   }
   closeMapModal();
 }
