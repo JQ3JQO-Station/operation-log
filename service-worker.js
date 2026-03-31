@@ -1,9 +1,10 @@
 // ================================================================
 // OPERATION LOG Service Worker
-// Version  : 2.3.0
-// Updated  : 2026-03-28
+// Version  : 2.4.0
+// Updated  : 2026-03-31
 // Author   : JQ3JQO / KyotoDR120
-// Changes  : 2.0.8 フェッチ戦略をネットワーク優先に変更
+// Changes  : 2.4.0 GPS・距離機能実装に伴うバージョン更新
+//            2.0.8 フェッチ戦略をネットワーク優先に変更
 //            2.0.4 SW_VERSIONをHTMLと同期
 //            2.0.0 初回正式リリース
 // ★ バージョン変更時はSW_VERSIONとHTMLのVERSIONを合わせること
@@ -12,7 +13,7 @@
 // ============================================================
 // ★ Service Worker バージョン ★
 // HTMLのVERSIONと合わせて更新してください
-const SW_VERSION = '2.3.0';
+const SW_VERSION = '2.4.0';
 // ============================================================
 
 const CACHE_NAME = 'oplog-cache-v' + SW_VERSION;

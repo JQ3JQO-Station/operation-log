@@ -2,10 +2,17 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.3.0
-Updated  : 2026-03-28
+Version  : 2.4.0
+Updated  : 2026-03-31
 Author   : JQ3JQO / KyotoDR120
-Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
+Changes  : 2.4.0 GPS・距離機能を実装
+             - 自局QTHカードにGPS現在地取得ボタンを追加
+             - 編集画面：距離入力・地図ウィンドウ（相手局運用地設定）
+             - ログ一覧：距離表示
+             - 検索タブ：距離ランキング（種別別TOP10）
+             - 日付検索を年・月セレクトボックスに変更
+           2.3.0 バージョンをLo版に同期
+           2.0.7 バックアップ復元時の上書き警告を追加
            2.0.6 復元前の未送信データ警告を追加
            2.0.5 スプレッドシートから復元を上書き方式に変更
            2.0.4 復元時のcsBase/ポータブル番号分離を修正
@@ -13,16 +20,6 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
            2.0.2 スプレッドシートから復元のfetch処理を修正
            2.0.1 スプレッドシートから復元機能を追加
            2.0.0 初回正式リリース
-           RSTボタン送受信を同じ構成に統一
-           コールサイン候補からポータブル番号を除外
-           よく使う都道府県を直近5件（新しい順）に変更
-           編集ウィンドウにトランシーバー種別変更欄を追加
-           送信中スピナー表示
-           日時入力の年4桁対応
-           運用地の入力候補表示
-           localStorageエラーハンドリング追加
-           EBボタン追加・デイリーサマリー対応
-           Service Workerバージョン管理対応
 ================================================================
 -->
 <html lang="ja">
@@ -36,6 +33,8 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <meta name="theme-color" content="#0077cc">
 <link rel="manifest" href="manifest_v2.json">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     /* ダークモード（改善版） */
@@ -303,6 +302,108 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
   }
   /* ライトモード時のmodal背景 */
   body.light .modal-overlay { background: rgba(0,0,0,0.4); }
+
+  /* 地図ウィンドウ */
+  .map-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 300;
+    flex-direction: column;
+  }
+  .map-modal-overlay.show { display: flex; }
+  .map-header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .map-header-title { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; }
+  .map-search-row {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; gap: 8px; flex-shrink: 0; overflow: hidden;
+  }
+  .map-search-input {
+    flex: 1; min-width: 0; background: var(--surface2); border: 2px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 16px;
+    padding: 10px 14px; outline: none; font-family: 'Noto Sans JP', sans-serif;
+  }
+  .map-search-input:focus { border-color: var(--accent2); }
+  .map-search-btn {
+    background: var(--accent2); border: none; border-radius: 10px;
+    color: #fff; font-size: 15px; font-weight: 700; padding: 10px 16px;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif;
+  }
+  .map-search-results {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    max-height: 140px; overflow-y: auto; flex-shrink: 0; display: none;
+  }
+  .map-search-results.show { display: block; }
+  .map-result-item {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    cursor: pointer; font-size: 14px; color: var(--text);
+  }
+  .map-result-item:last-child { border-bottom: none; }
+  .map-result-item:active { background: var(--surface2); }
+  #map-container { flex: 1; }
+  .map-footer {
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 10px 16px; flex-shrink: 0;
+  }
+  .map-coords {
+    font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    color: var(--text2); margin-bottom: 8px; text-align: center;
+  }
+  .map-footer-btns { display: flex; gap: 10px; }
+  .map-btn-ok {
+    flex: 1; background: var(--accent); border: none; border-radius: 10px;
+    color: #000; font-size: 16px; font-weight: 700; padding: 14px;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  }
+  .map-btn-cancel {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text2); font-size: 16px; font-weight: 700;
+    padding: 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  }
+  .map-offline-note {
+    font-size: 12px; color: var(--warn); text-align: center;
+    padding: 6px 0; display: none;
+  }
+  .map-offline-note.show { display: block; }
+  .btn-gps {
+    background: var(--surface2); border: 2px solid var(--accent2);
+    border-radius: 10px; color: var(--accent2); font-size: 14px; font-weight: 700;
+    padding: 10px 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .btn-gps:active { opacity: 0.7; }
+  .btn-gps.acquired { background: var(--accent2); color: #fff; }
+  .gps-status { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .log-distance {
+    font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    color: var(--accent); font-weight: 700;
+  }
+  .ranking-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .ranking-item:last-child { border-bottom: none; }
+  .ranking-item:active { opacity: 0.7; }
+  .ranking-num {
+    font-family: 'Share Tech Mono', monospace; font-size: 16px; font-weight: 700;
+    color: var(--text2); min-width: 28px; text-align: right; flex-shrink: 0;
+  }
+  .ranking-num.gold   { color: #ffd700; }
+  .ranking-num.silver { color: #c0c0c0; }
+  .ranking-num.bronze { color: #cd7f32; }
+  .ranking-dist {
+    font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 700;
+    color: var(--accent); min-width: 72px; flex-shrink: 0;
+  }
+  .ranking-cs {
+    font-family: 'Share Tech Mono', monospace; font-size: 15px;
+    color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ranking-date {
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    color: var(--text2); flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -318,13 +419,23 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
   </div>
 </div>
 
-<!-- 自局QTHバー -->
-<div class="myqth-bar" onclick="openMyQTH()">
-  <div>
-    <div class="label">自局運用地</div>
-    <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
+<!-- 自局QTH＋GPS取得カード -->
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;">
+  <div class="myqth-bar" onclick="openMyQTH()" style="border-radius:var(--radius) var(--radius) 0 0;margin-bottom:0;border:none;">
+    <div>
+      <div class="label">自局運用地</div>
+      <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
+    </div>
+    <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
   </div>
-  <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
+  <div style="border-top:1px solid var(--border);margin:0 14px;"></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;">
+    <button class="btn-gps" id="btn-gps" onclick="getMyGPS()">📍 現在地を取得</button>
+    <div>
+      <div class="gps-status" id="gps-status">距離計算用の自局座標を取得します</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px;">※オンライン環境での使用を推奨</div>
+    </div>
+  </div>
 </div>
 
 <!-- 自局QTH編集モーダル -->
@@ -595,11 +706,22 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
   <!-- 日付+トランシーバー検索 -->
   <div class="card">
     <div class="card-label">日付＋トランシーバー検索</div>
-    <div style="display:flex;gap:8px;margin-bottom:8px;">
-      <input type="month" id="search-month"
-        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;padding:12px 14px;outline:none;color-scheme:dark;"
-        onchange="searchByDate()"/>
-      <button onclick="clearSearch('date')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;">クリア</button>
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+      <select id="search-year" onchange="searchByDate()"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text);font-size:16px;padding:12px 10px;outline:none;
+               appearance:none;-webkit-appearance:none;font-family:'Noto Sans JP',sans-serif;
+               background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d0d0d0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E&quot;);
+               background-repeat:no-repeat;background-position:right 10px center;cursor:pointer;">
+      </select>
+      <select id="search-month-sel" onchange="searchByDate()"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text);font-size:16px;padding:12px 10px;outline:none;
+               appearance:none;-webkit-appearance:none;font-family:'Noto Sans JP',sans-serif;
+               background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d0d0d0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E&quot;);
+               background-repeat:no-repeat;background-position:right 10px center;cursor:pointer;">
+      </select>
+      <button onclick="clearSearch('date')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;white-space:nowrap;height:48px;">クリア</button>
     </div>
     <div class="btn-group" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px;" id="search-cat-btns">
       <button class="btn-cat active" data-cat="全て" onclick="selectSearchCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">全て</button>
@@ -610,6 +732,28 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
     </div>
     <div id="search-date-count" style="font-size:13px;color:var(--text2);margin-bottom:6px;display:none;"></div>
     <div id="search-result-date-list"></div>
+  </div>
+
+  <!-- 距離ランキング -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;">
+      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">距離ランキング</div>
+      <button id="btn-ranking-toggle" onclick="toggleRanking()"
+        style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text2);font-size:14px;font-weight:700;padding:8px 16px;
+               cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;">
+        表示する
+      </button>
+    </div>
+    <div id="ranking-panel" style="display:none;margin-top:14px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;" id="ranking-cat-btns">
+        <button class="btn-cat active" data-cat="DCR" onclick="selectRankingCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">DCR</button>
+        <button class="btn-cat" data-cat="LCR" onclick="selectRankingCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">LCR</button>
+        <button class="btn-cat" data-cat="特小" onclick="selectRankingCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">特小</button>
+        <button class="btn-cat" data-cat="CB" onclick="selectRankingCat(this)" style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;padding:10px 4px;">CB</button>
+      </div>
+      <div id="ranking-list"></div>
+    </div>
   </div>
 
   <!-- デイリーサマリー -->
@@ -849,6 +993,29 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
         onfocus="this.style.borderColor='var(--accent2)'"
         onblur="this.style.borderColor='var(--border)'"></textarea>
 
+      <!-- 距離・運用地設定 -->
+      <div class="edit-section-label">距離・運用地</div>
+      <div style="font-size:12px;color:var(--warn);margin-bottom:10px;line-height:1.6;">
+        ※ LCR：距離(km)を直接入力してください。<br>
+        ※ DCR・特小・CB：「相手局の運用地を設定」で地図からピン指定すると距離が自動計算されます。<br>
+        ※ 地図機能はオンライン環境でご使用ください。
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;box-sizing:border-box;width:100%;">
+        <span style="font-size:14px;color:var(--text2);font-weight:700;white-space:nowrap;min-width:52px;">距離</span>
+        <input type="tel" id="edit-distance" maxlength="7" placeholder="例：25.3"
+          style="flex:1;min-width:0;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+                 color:var(--text);font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:700;
+                 padding:12px;text-align:center;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--accent2)'"
+          onblur="this.style.borderColor='var(--border)'"
+          oninput="this.value=this.value.replace(/[^0-9.]/g,'')"/>
+        <span style="font-size:18px;font-weight:700;color:var(--text2);flex-shrink:0;">km</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;" id="edit-coords-display"></div>
+      <button onclick="openMapModal()" style="width:100%;background:var(--surface2);border:2px solid var(--accent2);border-radius:10px;color:var(--accent2);font-size:15px;font-weight:700;padding:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+        📍 相手局の運用地を設定（地図）
+      </button>
+
     </div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeEditModal()">キャンセル</button>
@@ -858,10 +1025,34 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
   </div>
 </div>
 
+<!-- 地図ウィンドウ（相手局運用地設定） -->
+<div class="map-modal-overlay" id="map-modal">
+  <div class="map-header">
+    <span class="map-header-title">📍 相手局の運用地を設定</span>
+    <button onclick="closeMapModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 8px;">✕</button>
+  </div>
+  <div class="map-offline-note" id="map-offline-note">⚠ オフライン中 — 地名検索は使用できません。地図タップでピンを設定できます。</div>
+  <div class="map-search-row">
+    <input class="map-search-input" id="map-search-input" type="text" placeholder="山名・地名で検索（例：比叡山）" autocomplete="off"
+      style="min-width:0;"
+      onkeydown="if(event.key==='Enter')searchLocation()"/>
+    <button class="map-search-btn" onclick="searchLocation()" style="flex-shrink:0;">検索</button>
+  </div>
+  <div class="map-search-results" id="map-search-results"></div>
+  <div id="map-container"></div>
+  <div class="map-footer">
+    <div class="map-coords" id="map-coords">地図をタップしてピンを設定してください</div>
+    <div class="map-footer-btns">
+      <button class="map-btn-cancel" onclick="closeMapModal()">キャンセル</button>
+      <button class="map-btn-ok" onclick="confirmMapLocation()">この地点に決定</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.3.0'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.4.0'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
@@ -1130,6 +1321,19 @@ function init() {
   renderMyQTH();
   buildPrefOptions('qth-pref', '');
   buildPrefOptions('my-pref', '');
+  // 年・月セレクトボックス初期化
+  const yearSel = document.getElementById('search-year');
+  const monSel  = document.getElementById('search-month-sel');
+  if (yearSel && monSel) {
+    yearSel.innerHTML = '<option value="">年</option>';
+    for (let y = now.getFullYear(); y >= 2020; y--) {
+      yearSel.innerHTML += `<option value="${y}"${y === now.getFullYear() ? ' selected' : ''}>${y}年</option>`;
+    }
+    monSel.innerHTML = '<option value="">月</option>';
+    for (let m = 1; m <= 12; m++) {
+      monSel.innerHTML += `<option value="${m}"${m === now.getMonth()+1 ? ' selected' : ''}>${m}月</option>`;
+    }
+  }
   renderGasUrlDisplay();
   // GAS URLが未設定なら初回モーダルを表示
   if (!getGasUrl() && localStorage.getItem('gas_url') === null) {
@@ -1363,6 +1567,7 @@ function submitLog() {
   const logTs = dtVal ? new Date(dtVal).toISOString() : new Date().toISOString();
 
   const myQTH = getMyQTH();
+  const myGps = getStoredMyGps();
   const log = {
     id: Date.now(),
     ts: logTs,
@@ -1371,6 +1576,7 @@ function submitLog() {
     repeaterName: state.tokushoMode === 'レピーター' ? (document.getElementById('repeater-name').value.trim() || '') : '',
     dcrPower: state.dcrPower || '',
     lcrDistance: state.cat === 'LCR' ? (document.getElementById('lcr-distance').value.trim() || '') : '',
+    distance: state.cat === 'LCR' ? (document.getElementById('lcr-distance').value.trim() || '') : '',
     cs: csDisplay,
     csBase: cs,
     csNorm: normalizeCallsignForSearch(cs),
@@ -1381,6 +1587,10 @@ function submitLog() {
     myPref:   myQTH ? myQTH.pref   : '',
     myCity:   myQTH ? myQTH.city   : '',
     myDetail: myQTH ? myQTH.detail : '',
+    myLat:    myGps ? myGps.lat : null,
+    myLng:    myGps ? myGps.lng : null,
+    theirLat: null,
+    theirLng: null,
     memo: document.getElementById('memo').value.trim() || '',
     eb: isEB,
     sent: false
@@ -1577,11 +1787,14 @@ function renderLog() {
     const rst = [l.rstTx, l.rstRx].filter(Boolean).join('/');
     const cs = l.cs || '';
     const ebBadge = (l.eb || l.cat === 'EB') ? '<span style="background:var(--accent2);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;">EB</span>' : '';
+    const distVal = l.distance || l.lcrDistance || '';
+    const distBadge = distVal ? `<span class="log-distance">${distVal}km</span>` : '';
     return `<div class="log-item">
       <div class="log-item-top">
         <span class="log-cat">${(l.eb || l.cat === 'EB') ? '' : (l.cat || '')}</span>
         <span class="log-cs">${cs}${ebBadge}</span>
         <span class="log-rst">${rst}</span>
+        ${distBadge}
         <button class="btn-edit-log" onclick="openEditModal('${l.id}')">編集</button>
       </div>
       <div class="log-item-bottom">
@@ -1642,17 +1855,17 @@ function searchByCs() {
 }
 
 function searchByDate() {
-  const month = document.getElementById('search-month').value;
+  const year = parseInt(document.getElementById('search-year').value);
+  const mon  = parseInt(document.getElementById('search-month-sel').value);
   const resultList = document.getElementById('search-result-date-list');
   const countEl = document.getElementById('search-date-count');
 
-  if (!month) {
+  if (!year || !mon) {
     resultList.innerHTML = '';
     countEl.style.display = 'none';
     return;
   }
 
-  const [year, mon] = month.split('-').map(Number);
   let results = getLogs().filter(l => {
     const d = new Date(l.ts);
     return d.getFullYear() === year && d.getMonth() + 1 === mon;
@@ -1709,7 +1922,8 @@ function clearSearch(type) {
     document.getElementById('search-cs').value = '';
     searchByCs();
   } else {
-    document.getElementById('search-month').value = '';
+    document.getElementById('search-year').value = '';
+    document.getElementById('search-month-sel').value = '';
     searchByDate();
   }
 }
@@ -2120,6 +2334,18 @@ function openEditModal(id) {
   document.getElementById('edit-detail').value = log.detail || '';
   document.getElementById('edit-memo').value   = log.memo   || '';
 
+  // 距離・座標
+  const distVal = log.distance || log.lcrDistance || '';
+  document.getElementById('edit-distance').value = distVal;
+  _mapPendingLat = null;
+  _mapPendingLng = null;
+  const coordsEl = document.getElementById('edit-coords-display');
+  if (log.theirLat && log.theirLng) {
+    coordsEl.textContent = `相手局座標：${log.theirLat.toFixed(5)}, ${log.theirLng.toFixed(5)}`;
+  } else {
+    coordsEl.textContent = '';
+  }
+
   document.getElementById('edit-modal').classList.add('show');
 }
 
@@ -2169,6 +2395,7 @@ function saveEditLog() {
   const idx  = logs.findIndex(l => String(l.id) === String(_editingLogId));
   if (idx === -1) { alert('編集対象のログが見つかりません'); return; }
 
+  const distInput = document.getElementById('edit-distance').value.trim();
   logs[idx] = {
     ...logs[idx],
     ts:       new Date(dtVal).toISOString(),
@@ -2183,6 +2410,9 @@ function saveEditLog() {
     city:     document.getElementById('edit-city').value.trim(),
     detail:   document.getElementById('edit-detail').value.trim(),
     memo:     document.getElementById('edit-memo').value.trim(),
+    distance: distInput || logs[idx].distance || '',
+    theirLat: _mapPendingLat !== null ? _mapPendingLat : (logs[idx].theirLat || null),
+    theirLng: _mapPendingLng !== null ? _mapPendingLng : (logs[idx].theirLng || null),
   };
 
   saveLogs(logs);
@@ -2232,6 +2462,234 @@ function toggleTheme() {
   const newMode = isLight ? 'dark' : 'light';
   localStorage.setItem('theme_mode', newMode);
   applyTheme(newMode);
+}
+
+// ===== 距離計算（Haversine公式） =====
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2)
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+    * Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(R * c * 10) / 10;
+}
+
+// ===== GPS取得（自局座標） =====
+let _myGpsLat = null;
+let _myGpsLng = null;
+
+function getMyGPS() {
+  const btn = document.getElementById('btn-gps');
+  const status = document.getElementById('gps-status');
+  if (!navigator.geolocation) {
+    status.textContent = '⚠ このブラウザはGPSに対応していません';
+    return;
+  }
+  btn.textContent = '📍 取得中…';
+  btn.classList.remove('acquired');
+  status.textContent = '現在地を取得しています…';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      _myGpsLat = pos.coords.latitude;
+      _myGpsLng = pos.coords.longitude;
+      localStorage.setItem('my_gps', JSON.stringify({ lat: _myGpsLat, lng: _myGpsLng, ts: Date.now() }));
+      btn.textContent = '📍 取得済み';
+      btn.classList.add('acquired');
+      status.textContent = `${_myGpsLat.toFixed(5)}, ${_myGpsLng.toFixed(5)}`;
+    },
+    err => {
+      btn.textContent = '📍 現在地を取得';
+      status.textContent = `⚠ 取得できませんでした（${err.message}）`;
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+function getStoredMyGps() {
+  if (_myGpsLat !== null) return { lat: _myGpsLat, lng: _myGpsLng };
+  const stored = JSON.parse(localStorage.getItem('my_gps') || 'null');
+  if (stored && (Date.now() - stored.ts) < 3600000) return { lat: stored.lat, lng: stored.lng };
+  return null;
+}
+
+// ===== 地図ウィンドウ =====
+let _map = null;
+let _mapMarker = null;
+let _mapPendingLat = null;
+let _mapPendingLng = null;
+
+function openMapModal() {
+  const overlay = document.getElementById('map-modal');
+  overlay.classList.add('show');
+  document.getElementById('map-search-input').value = '';
+  document.getElementById('map-search-results').classList.remove('show');
+  document.getElementById('map-search-results').innerHTML = '';
+  const offlineNote = document.getElementById('map-offline-note');
+  offlineNote.classList.toggle('show', !navigator.onLine);
+  const logs = getLogs();
+  const log = _editingLogId ? logs.find(l => String(l.id) === String(_editingLogId)) : null;
+  let initLat = 35.68, initLng = 136.0, initZoom = 6;
+  if (log && log.theirLat) { initLat = log.theirLat; initLng = log.theirLng; initZoom = 13; }
+  setTimeout(() => {
+    if (!_map) {
+      _map = L.map('map-container').setView([initLat, initLng], initZoom);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors', maxZoom: 18
+      }).addTo(_map);
+      _map.on('click', e => setMapPin(e.latlng.lat, e.latlng.lng));
+    } else {
+      _map.setView([initLat, initLng], initZoom);
+    }
+    if (log && log.theirLat) setMapPin(log.theirLat, log.theirLng);
+    _map.invalidateSize();
+  }, 100);
+}
+
+function closeMapModal() {
+  document.getElementById('map-modal').classList.remove('show');
+}
+
+function setMapPin(lat, lng) {
+  _mapPendingLat = lat;
+  _mapPendingLng = lng;
+  if (_mapMarker) {
+    _mapMarker.setLatLng([lat, lng]);
+  } else {
+    _mapMarker = L.marker([lat, lng], { draggable: true }).addTo(_map);
+    _mapMarker.on('dragend', e => {
+      const pos = e.target.getLatLng();
+      setMapPin(pos.lat, pos.lng);
+    });
+  }
+  document.getElementById('map-coords').textContent = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+}
+
+function searchLocation() {
+  const q = document.getElementById('map-search-input').value.trim();
+  if (!q) return;
+  if (!navigator.onLine) {
+    alert('オフライン中は地名検索を使用できません。\n地図をタップしてピンを設定してください。');
+    return;
+  }
+  const resultsEl = document.getElementById('map-search-results');
+  resultsEl.innerHTML = '<div style="padding:10px 16px;font-size:14px;color:var(--text2);">検索中…</div>';
+  resultsEl.classList.add('show');
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=jp&limit=5&format=json&accept-language=ja`;
+  fetch(url, { headers: { 'Accept-Language': 'ja' } })
+    .then(r => r.json())
+    .then(data => {
+      if (!data || data.length === 0) {
+        resultsEl.innerHTML = '<div style="padding:10px 16px;font-size:14px;color:var(--text2);">見つかりませんでした</div>';
+        return;
+      }
+      resultsEl.innerHTML = data.map((item, i) =>
+        `<div class="map-result-item" onclick="applySearchResult(${i})">
+          ${item.display_name.split(',').slice(0,3).join('、')}
+        </div>`
+      ).join('');
+      window._mapSearchResults = data;
+    })
+    .catch(() => {
+      resultsEl.innerHTML = '<div style="padding:10px 16px;font-size:14px;color:var(--warn);">検索に失敗しました</div>';
+    });
+}
+
+function applySearchResult(idx) {
+  const item = window._mapSearchResults[idx];
+  if (!item) return;
+  const lat = parseFloat(item.lat);
+  const lng = parseFloat(item.lon);
+  _map.setView([lat, lng], 13);
+  setMapPin(lat, lng);
+  document.getElementById('map-search-results').classList.remove('show');
+}
+
+function confirmMapLocation() {
+  if (_mapPendingLat === null) {
+    alert('地図をタップして運用地を設定してください');
+    return;
+  }
+  const myGps = getStoredMyGps();
+  const coordsEl = document.getElementById('edit-coords-display');
+  coordsEl.textContent = `相手局座標：${_mapPendingLat.toFixed(5)}, ${_mapPendingLng.toFixed(5)}`;
+  if (myGps) {
+    const dist = calcDistance(myGps.lat, myGps.lng, _mapPendingLat, _mapPendingLng);
+    document.getElementById('edit-distance').value = dist;
+    coordsEl.textContent += `　→　距離：${dist}km`;
+  } else {
+    coordsEl.textContent += '　（自局GPS未取得のため距離未計算）';
+  }
+  closeMapModal();
+}
+
+// ===== 距離ランキング =====
+let _rankingOpen = false;
+let _rankingCat = 'DCR';
+
+function toggleRanking() {
+  _rankingOpen = !_rankingOpen;
+  const panel = document.getElementById('ranking-panel');
+  const btn = document.getElementById('btn-ranking-toggle');
+  panel.style.display = _rankingOpen ? 'block' : 'none';
+  btn.textContent = _rankingOpen ? '閉じる' : '表示する';
+  if (_rankingOpen) renderRanking();
+}
+
+function selectRankingCat(btn) {
+  document.querySelectorAll('#ranking-cat-btns .btn-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _rankingCat = btn.dataset.cat;
+  renderRanking();
+}
+
+function renderRanking() {
+  const container = document.getElementById('ranking-list');
+  if (!container) return;
+  const catLogs = getLogs()
+    .filter(l => {
+      if (l.cat !== _rankingCat) return false;
+      const d = parseFloat(l.distance || l.lcrDistance || '');
+      return !isNaN(d) && d > 0;
+    })
+    .sort((a, b) => parseFloat(b.distance || b.lcrDistance || 0) - parseFloat(a.distance || a.lcrDistance || 0))
+    .slice(0, 10);
+  if (catLogs.length === 0) {
+    container.innerHTML = `<div class="empty-msg">${_rankingCat} の距離記録がありません</div>`;
+    return;
+  }
+  container.innerHTML = catLogs.map((l, i) => {
+    const dist = parseFloat(l.distance || l.lcrDistance || 0);
+    const d = new Date(l.ts);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    const numClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    return `<div class="ranking-item" onclick="openLogDetail('${l.id}')">
+      <span class="ranking-num ${numClass}">${i+1}</span>
+      <span class="ranking-dist">${dist}km</span>
+      <span class="ranking-cs">${l.cs || ''}</span>
+      <span class="ranking-date">${dateStr}</span>
+    </div>`;
+  }).join('');
+}
+
+function openLogDetail(id) {
+  const log = getLogs().find(l => String(l.id) === String(id));
+  if (!log) return;
+  const d = new Date(log.ts);
+  const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const qth = [log.pref, log.city, log.detail].filter(Boolean).join(' ');
+  const myqth = [log.myPref, log.myCity, log.myDetail].filter(Boolean).join(' ');
+  const rst = [log.rstTx, log.rstRx].filter(Boolean).join(' / ');
+  const dist = log.distance || log.lcrDistance || '';
+  let msg = `【${log.cat}】${log.cs || ''}\n`;
+  msg += `日時：${dateStr}\n`;
+  msg += `RST：${rst || '−'}\n`;
+  msg += `相手局QTH：${qth || '−'}\n`;
+  msg += `自局QTH：${myqth || '−'}\n`;
+  if (dist) msg += `距離：${dist}km\n`;
+  if (log.memo) msg += `メモ：${log.memo}\n`;
+  alert(msg);
 }
 
 init();
