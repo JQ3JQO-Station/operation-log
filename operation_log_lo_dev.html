@@ -696,12 +696,22 @@ Changes  : 3.0.0-dev 距離機能テスト実装
   <!-- 日付+トランシーバー検索 -->
   <div class="card">
     <div class="card-label">日付＋トランシーバー検索</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">年月を選択してください</div>
-    <div style="display:flex;gap:8px;margin-bottom:8px;">
-      <input type="month" id="search-month"
-        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-family:'Noto Sans JP',sans-serif;padding:12px 14px;outline:none;"
-        onchange="searchByDate()"/>
-      <button onclick="clearSearch('date')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;">クリア</button>
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+      <select id="search-year" onchange="searchByDate()"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text);font-size:16px;padding:12px 10px;outline:none;
+               appearance:none;-webkit-appearance:none;font-family:'Noto Sans JP',sans-serif;
+               background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d0d0d0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\");
+               background-repeat:no-repeat;background-position:right 10px center;cursor:pointer;">
+      </select>
+      <select id="search-month-sel" onchange="searchByDate()"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text);font-size:16px;padding:12px 10px;outline:none;
+               appearance:none;-webkit-appearance:none;font-family:'Noto Sans JP',sans-serif;
+               background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d0d0d0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\");
+               background-repeat:no-repeat;background-position:right 10px center;cursor:pointer;">
+      </select>
+      <button onclick="clearSearch('date')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;white-space:nowrap;height:48px;">クリア</button>
     </div>
     <div class="btn-group" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px;" id="search-cat-btns">
       <button class="btn-cat active" data-cat="全て" onclick="selectSearchCat(this)" style="font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 4px;">全て</button>
@@ -1286,6 +1296,20 @@ function init() {
   renderMyQTH();
   buildPrefOptions('qth-pref', '');
   buildPrefOptions('my-pref', '');
+  // 年・月セレクトボックス初期化
+  const nowDate = new Date();
+  const yearSel = document.getElementById('search-year');
+  const monSel  = document.getElementById('search-month-sel');
+  if (yearSel && monSel) {
+    yearSel.innerHTML = '<option value="">年</option>';
+    for (let y = nowDate.getFullYear(); y >= 2020; y--) {
+      yearSel.innerHTML += `<option value="${y}"${y === nowDate.getFullYear() ? ' selected' : ''}>${y}年</option>`;
+    }
+    monSel.innerHTML = '<option value="">月</option>';
+    for (let m = 1; m <= 12; m++) {
+      monSel.innerHTML += `<option value="${m}"${m === nowDate.getMonth()+1 ? ' selected' : ''}>${m}月</option>`;
+    }
+  }
   // Lo版：GAS関連初期化なし
   if (!getMyQTH()) setTimeout(openMyQTH, 400);
   setNowDatetime();
@@ -1804,19 +1828,16 @@ function searchByCs() {
 }
 
 function searchByDate() {
-  const el = document.getElementById('search-month');
-  el.classList.toggle('has-value', !!el.value);
-  const month = el.value;
+  const year = parseInt(document.getElementById('search-year').value);
+  const mon  = parseInt(document.getElementById('search-month-sel').value);
   const resultList = document.getElementById('search-result-date-list');
   const countEl = document.getElementById('search-date-count');
 
-  if (!month) {
+  if (!year || !mon) {
     resultList.innerHTML = '';
     countEl.style.display = 'none';
     return;
   }
-
-  const [year, mon] = month.split('-').map(Number);
   let results = getLogs().filter(l => {
     const d = new Date(l.ts);
     return d.getFullYear() === year && d.getMonth() + 1 === mon;
@@ -1873,9 +1894,8 @@ function clearSearch(type) {
     document.getElementById('search-cs').value = '';
     searchByCs();
   } else {
-    const el = document.getElementById('search-month');
-    el.value = '';
-    el.classList.remove('has-value');
+    document.getElementById('search-year').value = '';
+    document.getElementById('search-month-sel').value = '';
     searchByDate();
   }
 }
