@@ -244,6 +244,10 @@ https://jq3jqo-station.github.io/operation-log/operation_log_lo.html
 ・CSVで保存：全ログをCSVファイルとして書き出します
 　　　　　　　ExcelやGoogleスプレッドシートで開けます
 　　　　　　　ファイル名：oplog_YYYYMMDD.csv
+　　　　　　　列構成：No / 日時 / 種別 / DCR出力 / 特小交信方法 / 特小レピーター名 /
+　　　　　　　　　　　距離(km) / コールサイン / ポータブル / 送信RST / 受信RST /
+　　　　　　　　　　　相手局_都道府県 / 相手局_市区町村 / 相手局_詳細 /
+　　　　　　　　　　　自局_都道府県 / 自局_市区町村 / 自局_詳細 / メモ
 ・バックアップ作成：全ログをJSONファイルとして書き出します
 　　　　　　　　　　ファイル名：oplog_backup_YYYYMMDD.json
 

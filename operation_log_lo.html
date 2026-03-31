@@ -1992,7 +1992,7 @@ function copyDaily() {
 function exportCSV() {
   const logs = getLogs();
   if (logs.length === 0) { alert('記録がありません'); return; }
-  const headers = ['No','日時','種別','DCR出力','特小交信方法','特小レピーター名','LCR距離(km)','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細','メモ'];
+  const headers = ['No','日時','種別','DCR出力','特小交信方法','特小レピーター名','距離(km)','コールサイン','ポータブル','送信RST','受信RST','相手局_都道府県','相手局_市区町村','相手局_詳細','自局_都道府県','自局_市区町村','自局_詳細','メモ'];
   const rows = logs.map((l, i) => [
     i + 1,
     new Date(l.ts).toLocaleString('ja-JP'),
@@ -2000,7 +2000,7 @@ function exportCSV() {
     l.dcrPower || '',
     l.tokushoMode || '',
     l.repeaterName || '',
-    l.lcrDistance || '',
+    l.distance || l.lcrDistance || '',
     l.csBase || l.cs || '',
     l.portable || '',
     l.rstTx || '',
