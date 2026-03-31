@@ -2,10 +2,11 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.4.1
-Updated  : 2026-03-31
+Version  : 2.4.2
+Updated  : 2026-04-01
 Author   : JQ3JQO / KyotoDR120
-Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
+Changes  : 2.4.2 GPSボタンを自局運用地カードから編集画面の距離計算セクションへ移動
+           2.0.7 バックアップ復元時の上書き警告を追加
            2.0.6 復元前の未送信データ警告を追加
            2.0.5 スプレッドシートから復元を上書き方式に変更
            2.0.4 復元時のcsBase/ポータブル番号分離を修正
@@ -430,14 +431,6 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
       <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
     </div>
     <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
-  </div>
-  <div style="border-top:1px solid var(--border);margin:0 14px;"></div>
-  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;">
-    <button class="btn-gps" id="btn-gps" onclick="getMyGPS()">📍 現在地を取得</button>
-    <div>
-      <div class="gps-status" id="gps-status">距離計算用の自局座標を取得します</div>
-      <div style="font-size:10px;color:var(--text2);margin-top:2px;">※オンライン環境での使用を推奨</div>
-    </div>
   </div>
 </div>
 
@@ -1065,12 +1058,22 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
         onfocus="this.style.borderColor='var(--accent2)'"
         onblur="this.style.borderColor='var(--border)'"></textarea>
 
-      <!-- 距離・運用地設定 -->
-      <div class="edit-section-label">距離・運用地</div>
+      <!-- 距離計算 -->
+      <div class="edit-section-label">距離計算</div>
       <div style="font-size:12px;color:var(--warn);margin-bottom:10px;line-height:1.6;">
         ※ LCR：距離(km)を直接入力してください。<br>
-        ※ DCR・特小・CB：「相手局の運用地を設定」で地図からピン指定すると距離が自動計算されます。<br>
+        ※ DCR・特小・CB：自局の現在地を取得し、「相手局の運用地を設定」で地図からピン指定すると距離が自動計算されます。<br>
         ※ 地図機能はオンライン環境でご使用ください。
+      </div>
+      <!-- 自局GPS取得 -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <button class="btn-gps" id="btn-gps" onclick="getMyGPS()">
+          📍 自局の現在地を取得
+        </button>
+        <div>
+          <div class="gps-status" id="gps-status">自局座標を取得します</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:2px;">※オンライン環境での使用を推奨</div>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;box-sizing:border-box;width:100%;">
         <span style="font-size:14px;color:var(--text2);font-weight:700;white-space:nowrap;min-width:52px;">距離</span>
@@ -1124,7 +1127,7 @@ Changes  : 2.0.7 バックアップ復元時の上書き警告を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.4.1'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.4.2'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
