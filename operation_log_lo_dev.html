@@ -157,6 +157,11 @@ Changes  : 3.0.0-dev 距離機能テスト実装
   input.qth-text::placeholder { color: var(--text2); opacity: 0.4; }
   input.qth-text:focus { border-color: var(--accent2); }
 
+  input[type="month"]::-webkit-datetime-edit { color: var(--text2); opacity: 0.5; }
+  input[type="month"]::-webkit-datetime-edit-fields-wrapper { color: var(--text2); opacity: 0.5; }
+  input[type="month"].has-value::-webkit-datetime-edit,
+  input[type="month"].has-value::-webkit-datetime-edit-fields-wrapper { color: var(--text); opacity: 1; }
+
   .btn-submit {
     width: 100%; background: var(--accent); border: none; border-radius: var(--radius);
     color: #000; font-size: 22px; font-weight: 700; padding: 20px; cursor: pointer;
@@ -428,23 +433,26 @@ Changes  : 3.0.0-dev 距離機能テスト実装
   </div>
 </div>
 
-<!-- 自局QTHバー -->
-<div class="myqth-bar" onclick="openMyQTH()">
-  <div>
-    <div class="label">自局 QTH（運用地）</div>
-    <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
+<!-- 自局QTH＋GPS取得カード -->
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;">
+  <!-- 自局QTHバー -->
+  <div class="myqth-bar" onclick="openMyQTH()" style="border-radius:var(--radius) var(--radius) 0 0;margin-bottom:0;border:none;">
+    <div>
+      <div class="label">自局 QTH（運用地）</div>
+      <div class="value" id="myqth-display"><span class="empty">タップして運用地を設定</span></div>
+    </div>
+    <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
   </div>
-  <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
-</div>
-
-<!-- 自局GPS取得エリア -->
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);">
-  <button class="btn-gps" id="btn-gps" onclick="getMyGPS()">
-    📍 現在地を取得
-  </button>
-  <div>
-    <div class="gps-status" id="gps-status">距離計算用の自局座標を取得します</div>
-    <div style="font-size:10px;color:var(--text2);margin-top:2px;">※オンライン環境での使用を推奨</div>
+  <div style="border-top:1px solid var(--border);margin:0 14px;"></div>
+  <!-- GPS取得エリア -->
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;">
+    <button class="btn-gps" id="btn-gps" onclick="getMyGPS()">
+      📍 現在地を取得
+    </button>
+    <div>
+      <div class="gps-status" id="gps-status">距離計算用の自局座標を取得します</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px;">※オンライン環境での使用を推奨</div>
+    </div>
   </div>
 </div>
 
@@ -688,9 +696,10 @@ Changes  : 3.0.0-dev 距離機能テスト実装
   <!-- 日付+トランシーバー検索 -->
   <div class="card">
     <div class="card-label">日付＋トランシーバー検索</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">年月を選択してください</div>
     <div style="display:flex;gap:8px;margin-bottom:8px;">
       <input type="month" id="search-month"
-        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;padding:12px 14px;outline:none;color-scheme:dark;"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-family:'Noto Sans JP',sans-serif;padding:12px 14px;outline:none;"
         onchange="searchByDate()"/>
       <button onclick="clearSearch('date')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;padding:0 14px;cursor:pointer;">クリア</button>
     </div>
@@ -1795,7 +1804,9 @@ function searchByCs() {
 }
 
 function searchByDate() {
-  const month = document.getElementById('search-month').value;
+  const el = document.getElementById('search-month');
+  el.classList.toggle('has-value', !!el.value);
+  const month = el.value;
   const resultList = document.getElementById('search-result-date-list');
   const countEl = document.getElementById('search-date-count');
 
@@ -1862,7 +1873,9 @@ function clearSearch(type) {
     document.getElementById('search-cs').value = '';
     searchByCs();
   } else {
-    document.getElementById('search-month').value = '';
+    const el = document.getElementById('search-month');
+    el.value = '';
+    el.classList.remove('has-value');
     searchByDate();
   }
 }
