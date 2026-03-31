@@ -325,6 +325,88 @@
 
 <div class="footer">
   <span>OPERATION LOG</span>　&nbsp;JQ3JQO / KyotoDR120　&nbsp;無償提供・著作権は制作者に帰属します
+  <div style="margin-top:14px;">
+    <button onclick="document.getElementById('disclaimer-modal').style.display='flex'"
+      style="background:none;border:2px solid var(--gray);border-radius:8px;
+             color:var(--gray);font-size:13px;font-weight:700;padding:10px 24px;
+             cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:0.05em;
+             transition:all 0.15s;">
+      利用規約・免責事項
+    </button>
+  </div>
+</div>
+
+<!-- 免責事項ウィンドウ -->
+<div id="disclaimer-modal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
+         z-index:200;align-items:flex-start;justify-content:center;
+         overflow-y:auto;padding:24px 16px;">
+  <div style="background:#fff;border-radius:14px;padding:28px 24px;
+              width:100%;max-width:480px;margin:auto;position:relative;">
+    <h2 style="font-size:17px;font-weight:700;color:var(--navy);margin-bottom:18px;">
+      利用規約・免責事項
+    </h2>
+    <div style="font-size:13px;color:var(--gray);line-height:1.8;max-height:60vh;overflow-y:auto;padding-right:4px;">
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">1. 本アプリについて</p>
+      <p>本アプリ「OPERATION LOG」はフリーライセンス無線の運用ログ記録を目的として、JQ3JQO / KyotoDR120が個人で開発・無償配布するソフトウェアです。本アプリの使用にあたっては、以下の事項をご理解・ご同意の上でご利用ください。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">2. 無償提供について</p>
+      <p>本アプリは無償で提供されます。利用料金は一切発生しません。また、継続的な提供・機能の維持・改善を保証するものではありません。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">3. 禁止事項</p>
+      <p>・本アプリまたはそのソースコードを有償で販売・配布・提供すること。</p>
+      <p>・本アプリのソースコード・デザイン・機能を無断で複製し、別のサービスや製品として公開・配布すること。</p>
+      <p>・本アプリを改変した上で、制作者の許可なく第三者に配布・公開すること。</p>
+      <p>・本アプリを使用して違法行為・迷惑行為・他者への損害を与える行為を行うこと。</p>
+      <p>・本アプリを使用して取得したデータを、個人情報保護法その他関連法令に違反する形で取り扱うこと。</p>
+      <p>・本アプリのシステムに不正アクセスする行為、または本アプリの正常な運用を妨害する行為。</p>
+      <p>・本アプリを政治活動・宗教活動・特定のイデオロギーの宣伝等の目的に利用すること。</p>
+      <p>・本アプリを商業目的・営利目的で使用すること。ただし個人の運用ログ記録目的での使用は無償・自由とします。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">4. データに関する免責</p>
+      <p>本アプリを使用することによって生じたデータの損失・消失・破損・漏洩等について、制作者は一切の責任を負いません。大切なデータは定期的にバックアップ機能を使用して保存してください。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">5. 動作に関する免責</p>
+      <p>本アプリはすべての環境での動作を保証するものではありません。本アプリの使用・使用不能によって生じたいかなる損害についても、制作者は責任を負いません。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">6. 外部サービスに関する免責</p>
+      <p>本アプリはGoogle Apps Script・Googleスプレッドシート・OpenStreetMap・Nominatim等の外部サービスを利用しています。これらの仕様変更・障害・サービス終了等によって本アプリが使用できなくなった場合についても、制作者は責任を負いません。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">7. 使用機器に関する免責</p>
+      <p>本アプリの使用によって生じたスマートフォン・タブレット・PC等の使用機器のトラブル・故障・損害について、制作者は一切の責任を負いません。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">8. 使用者の判断と責任</p>
+      <p>本アプリの使用はすべて使用者自身の判断と責任において行うものとします。本アプリを使用したことにより発生したいかなるトラブル・損害・不利益についても、制作者に責任が及ぶことはありません。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">9. 著作権について</p>
+      <p>本アプリのソースコード・デザイン・文章・構成等の著作権はすべてJQ3JQO / KyotoDR120に帰属します。著作権法により保護されており、無断転載・複製・引用は禁止します。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">10. 位置情報の取り扱いについて</p>
+      <p>本アプリはGPS機能を使用して使用者の現在地情報（緯度・経度）を取得することがあります。</p>
+      <p>・位置情報は使用者のブラウザ内にのみ保存されます。</p>
+      <p>・位置情報を外部サーバーへ送信・収集することは一切ありません。</p>
+      <p>・位置情報の取得はGPSボタンをタップした場合のみ行われます。</p>
+      <p>・位置情報の利用目的は交信距離の計算に限られます。</p>
+      <p>・取得した位置情報の取り扱いに起因するトラブル・損害について、制作者は責任を負いません。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">11. 規約の変更について</p>
+      <p>本規約は予告なく変更される場合があります。変更後の規約は公開時点から適用されます。継続して本アプリを使用した場合は、変更後の規約に同意したものとみなします。</p>
+
+      <p style="font-weight:700;color:var(--navy);margin:12px 0 4px;">12. 準拠法</p>
+      <p>本規約は日本法に準拠し、日本法に基づいて解釈されます。本アプリの使用に関して紛争が生じた場合は、制作者の所在地を管轄する裁判所を専属合意管轄とします。</p>
+
+      <p style="margin-top:16px;">JQ3JQO / KyotoDR120</p>
+    </div>
+    <div style="margin-top:20px;">
+      <button onclick="document.getElementById('disclaimer-modal').style.display='none'"
+        style="width:100%;background:var(--navy);border:none;border-radius:10px;
+               color:#fff;font-size:16px;font-weight:700;padding:14px;
+               cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+        閉じる
+      </button>
+    </div>
+  </div>
 </div>
 
 </body>
