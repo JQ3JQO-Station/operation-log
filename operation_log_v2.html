@@ -432,14 +432,6 @@ Changes  : 2.4.2 EBモード時トランシーバー未選択でも記録可能�
     </div>
     <button class="edit-btn" onclick="openMyQTH();event.stopPropagation();">変更</button>
   </div>
-  <div style="border-top:1px solid var(--border);margin:0 14px;"></div>
-  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;">
-    <button class="btn-gps" id="btn-gps" onclick="getMyGPS()">📍 現在地を取得</button>
-    <div>
-      <div class="gps-status" id="gps-status">距離計算用の自局座標を取得します</div>
-      <div style="font-size:10px;color:var(--text2);margin-top:2px;">※オンライン環境での使用を推奨</div>
-    </div>
-  </div>
 </div>
 
 <!-- 自局運用地編集ウィンドウ -->
@@ -1066,12 +1058,22 @@ Changes  : 2.4.2 EBモード時トランシーバー未選択でも記録可能�
         onfocus="this.style.borderColor='var(--accent2)'"
         onblur="this.style.borderColor='var(--border)'"></textarea>
 
-      <!-- 距離・運用地設定 -->
-      <div class="edit-section-label">距離・運用地</div>
+      <!-- 距離計算 -->
+      <div class="edit-section-label">距離計算</div>
       <div style="font-size:12px;color:var(--warn);margin-bottom:10px;line-height:1.6;">
         ※ LCR：距離(km)を直接入力してください。<br>
-        ※ DCR・特小・CB：「相手局の運用地を設定」で地図からピン指定すると距離が自動計算されます。<br>
+        ※ DCR・特小・CB：自局の現在地を取得し、「相手局の運用地を設定」で地図からピン指定すると距離が自動計算されます。<br>
         ※ 地図機能はオンライン環境でご使用ください。
+      </div>
+      <!-- 自局GPS取得 -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <button class="btn-gps" id="btn-gps" onclick="getMyGPS()">
+          📍 自局の現在地を取得
+        </button>
+        <div>
+          <div class="gps-status" id="gps-status">自局座標を取得します</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:2px;">※オンライン環境での使用を推奨</div>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;box-sizing:border-box;width:100%;">
         <span style="font-size:14px;color:var(--text2);font-weight:700;white-space:nowrap;min-width:52px;">距離</span>
