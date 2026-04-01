@@ -2,10 +2,11 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.4.3
+Version  : 2.4.4
 Updated  : 2026-04-01
 Author   : JQ3JQO / KyotoDR120
-Changes  : 2.4.3 編集画面に特小交信方法・DCR出力の編集を追加
+Changes  : 2.4.4 編集ウィンドウを開く際にスクロール位置を先頭にリセット
+           2.4.3 編集画面に特小交信方法・DCR出力の編集を追加
            2.4.2 EBモード時トランシーバー未選択でも記録可能に修正
            2.0.7 バックアップ復元時の上書き警告を追加
            2.0.6 復元前の未送信データ警告を追加
@@ -1154,7 +1155,7 @@ Changes  : 2.4.3 編集画面に特小交信方法・DCR出力の編集を追加
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.4.3'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.4.4'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
@@ -2461,6 +2462,7 @@ function openEditModal(id) {
   }
 
   document.getElementById('edit-modal').classList.add('show');
+  document.querySelector('#edit-modal .edit-modal-body').scrollTop = 0;
 
   // DCRカード復元
   const dcrCard = document.getElementById('edit-dcr-power-card');
