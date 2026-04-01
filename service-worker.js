@@ -3,8 +3,7 @@
 // Version  : 2.4.2
 // Updated  : 2026-04-01
 // Author   : JQ3JQO / KyotoDR120
-// Changes  : 2.4.2 バージョン同期
-//            2.0.8 フェッチ戦略をネットワーク優先に変更
+// Changes  : 2.0.8 フェッチ戦略をネットワーク優先に変更
 //            2.0.4 SW_VERSIONをHTMLと同期
 //            2.0.0 初回正式リリース
 // ★ バージョン変更時はSW_VERSIONとHTMLのVERSIONを合わせること
