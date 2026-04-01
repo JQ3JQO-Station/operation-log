@@ -2,10 +2,11 @@
 <!--
 ================================================================
 OPERATION LOG V2
-Version  : 2.4.2
+Version  : 2.4.3
 Updated  : 2026-04-01
 Author   : JQ3JQO / KyotoDR120
-Changes  : 2.4.2 EBモード時トランシーバー未選択でも記録可能に修正
+Changes  : 2.4.3 編集画面に特小交信方法・DCR出力の編集を追加
+           2.4.2 EBモード時トランシーバー未選択でも記録可能に修正
            2.0.7 バックアップ復元時の上書き警告を追加
            2.0.6 復元前の未送信データ警告を追加
            2.0.5 スプレッドシートから復元を上書き方式に変更
@@ -1007,6 +1008,32 @@ Changes  : 2.4.2 EBモード時トランシーバー未選択でも記録可能�
         <button class="btn-rst" data-cat="EB"  onclick="selectEditCat(this)" style="font-family:'Noto Sans JP',sans-serif;">EB</button>
       </div>
 
+      <!-- 編集画面：DCR出力カード -->
+      <div id="edit-dcr-power-card" style="display:none;margin-bottom:8px;">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:700;">出力</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-rst" id="edit-dcr-5w" data-power="5W" onclick="selectEditDcrPower(this)" style="flex:1;font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;">5W</button>
+          <button class="btn-rst" id="edit-dcr-1w" data-power="1W" onclick="selectEditDcrPower(this)" style="flex:1;font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;">1W</button>
+        </div>
+      </div>
+
+      <!-- 編集画面：特小交信方法カード -->
+      <div id="edit-tokusho-card" style="display:none;margin-bottom:8px;">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:700;">交信方法</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <button class="btn-rst" id="edit-tokusho-tanshin" data-mode="単信" onclick="selectEditTokushoMode(this)" style="flex:1;font-family:'Noto Sans JP',sans-serif;font-size:16px;">単信</button>
+          <button class="btn-rst" id="edit-tokusho-repeater" data-mode="レピーター" onclick="selectEditTokushoMode(this)" style="flex:1;font-family:'Noto Sans JP',sans-serif;font-size:16px;">レピーター</button>
+        </div>
+        <div id="edit-repeater-name-row" style="display:none;">
+          <input type="text" id="edit-repeater-name" placeholder="レピーター名（任意）"
+            style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+                   color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:15px;
+                   padding:12px;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='var(--accent2)'"
+            onblur="this.style.borderColor='var(--border)'"/>
+        </div>
+      </div>
+
       <!-- RST -->
       <div class="edit-section-label">レポート</div>
       <div style="display:flex;gap:12px;">
@@ -1127,7 +1154,7 @@ Changes  : 2.4.2 EBモード時トランシーバー未選択でも記録可能�
 <script>
 // ============================================================
 // ★ バージョン番号 ★　更新時はここだけ書き換えてください
-const VERSION = '2.4.2'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
+const VERSION = '2.4.3'; // ★ バージョン変更時はファイル先頭のコメントブロックと合わせること
 // ============================================================
 // ===== ローマ字→ひらがな変換テーブル =====
 const ROMAJI_MAP = [
@@ -2434,11 +2461,54 @@ function openEditModal(id) {
   }
 
   document.getElementById('edit-modal').classList.add('show');
+
+  // DCRカード復元
+  const dcrCard = document.getElementById('edit-dcr-power-card');
+  dcrCard.style.display = log.cat === 'DCR' ? 'block' : 'none';
+  document.querySelectorAll('#edit-dcr-power-card .btn-rst').forEach(b => {
+    b.classList.toggle('active', b.dataset.power === log.dcrPower);
+  });
+  // 特小カード復元
+  const tokushoCard = document.getElementById('edit-tokusho-card');
+  tokushoCard.style.display = log.cat === '特小' ? 'block' : 'none';
+  document.querySelectorAll('#edit-tokusho-card .btn-rst').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === log.tokushoMode);
+  });
+  const isRepeater = log.tokushoMode === 'レピーター';
+  document.getElementById('edit-repeater-name-row').style.display = isRepeater ? 'block' : 'none';
+  document.getElementById('edit-repeater-name').value = log.repeaterName || '';
 }
 
 function selectEditCat(btn) {
   document.querySelectorAll('#edit-cat-btns .btn-rst').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  const cat = btn.dataset.cat;
+  // DCRカード
+  const dcrCard = document.getElementById('edit-dcr-power-card');
+  dcrCard.style.display = cat === 'DCR' ? 'block' : 'none';
+  if (cat !== 'DCR') {
+    document.querySelectorAll('#edit-dcr-power-card .btn-rst').forEach(b => b.classList.remove('active'));
+  }
+  // 特小カード
+  const tokushoCard = document.getElementById('edit-tokusho-card');
+  tokushoCard.style.display = cat === '特小' ? 'block' : 'none';
+  if (cat !== '特小') {
+    document.querySelectorAll('#edit-tokusho-card .btn-rst').forEach(b => b.classList.remove('active'));
+    document.getElementById('edit-repeater-name-row').style.display = 'none';
+  }
+}
+
+function selectEditDcrPower(btn) {
+  document.querySelectorAll('#edit-dcr-power-card .btn-rst').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selectEditTokushoMode(btn) {
+  document.querySelectorAll('#edit-tokusho-card .btn-rst').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isRepeater = btn.dataset.mode === 'レピーター';
+  document.getElementById('edit-repeater-name-row').style.display = isRepeater ? 'block' : 'none';
+  if (!isRepeater) document.getElementById('edit-repeater-name').value = '';
 }
 
 function closeEditModal() {
@@ -2483,22 +2553,29 @@ function saveEditLog() {
   if (idx === -1) { alert('編集対象のログが見つかりません'); return; }
 
   const distInput = document.getElementById('edit-distance').value.trim();
+  const editDcrPowerBtn = document.querySelector('#edit-dcr-power-card .btn-rst.active');
+  const editTokushoBtn  = document.querySelector('#edit-tokusho-card .btn-rst.active');
   logs[idx] = {
     ...logs[idx],
-    ts:       new Date(dtVal).toISOString(),
-    cat:      editCat || logs[idx].cat,
-    cs:       csDisplay,
-    csBase:   cs,
-    csNorm:   normalizeCallsignForSearch(cs),
-    portable: portable,
-    rstTx:    document.getElementById('edit-rst-tx').value.trim(),
-    rstRx:    document.getElementById('edit-rst-rx').value.trim(),
-    pref:     pref,
-    city:     document.getElementById('edit-city').value.trim(),
-    detail:   document.getElementById('edit-detail').value.trim(),
-    memo:     document.getElementById('edit-memo').value.trim(),
-    distance: distInput || logs[idx].distance || '',
-    theirLat: _mapPendingLat !== null ? _mapPendingLat : (logs[idx].theirLat || null),
+    ts:           new Date(dtVal).toISOString(),
+    cat:          editCat || logs[idx].cat,
+    cs:           csDisplay,
+    csBase:       cs,
+    csNorm:       normalizeCallsignForSearch(cs),
+    portable:     portable,
+    rstTx:        document.getElementById('edit-rst-tx').value.trim(),
+    rstRx:        document.getElementById('edit-rst-rx').value.trim(),
+    pref:         pref,
+    city:         document.getElementById('edit-city').value.trim(),
+    detail:       document.getElementById('edit-detail').value.trim(),
+    memo:         document.getElementById('edit-memo').value.trim(),
+    dcrPower:     editDcrPowerBtn ? editDcrPowerBtn.dataset.power : (logs[idx].dcrPower || ''),
+    tokushoMode:  editTokushoBtn  ? editTokushoBtn.dataset.mode   : (logs[idx].tokushoMode || ''),
+    repeaterName: editTokushoBtn && editTokushoBtn.dataset.mode === 'レピーター'
+                    ? document.getElementById('edit-repeater-name').value.trim()
+                    : (logs[idx].repeaterName || ''),
+    distance:     distInput || logs[idx].distance || '',
+    theirLat:     _mapPendingLat !== null ? _mapPendingLat : (logs[idx].theirLat || null),
     theirLng: _mapPendingLng !== null ? _mapPendingLng : (logs[idx].theirLng || null),
   };
 
