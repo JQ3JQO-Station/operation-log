@@ -2617,10 +2617,9 @@ function toggleLogList() {
 }
 
 function toggleRanking() {
-  const panel = document.getElementById('ranking-panel');
-  const btn = document.getElementById('btn-ranking-toggle');
-  panel.style.display = _rankingOpen ? 'block' : 'none';
-  btn.textContent = _rankingOpen ? '閉じる' : '表示する';
+  _rankingOpen = !_rankingOpen;
+  document.getElementById('ranking-panel').style.display = _rankingOpen ? 'block' : 'none';
+  document.getElementById('btn-ranking-toggle').textContent = _rankingOpen ? '閉じる' : '表示する';
   if (_rankingOpen) renderRanking();
 }
 
