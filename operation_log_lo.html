@@ -2695,11 +2695,14 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/operation-log/service-worker.js')
       .then(reg => {
         console.log('SW registered:', reg.scope);
-        reg.update();
       })
       .catch(err => console.log('SW registration failed:', err));
   });
+  // 新しいSWが有効になったらページをリロード（二重リロード防止）
+  let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
     console.log('SW updated, reloading...');
     window.location.reload();
   });
