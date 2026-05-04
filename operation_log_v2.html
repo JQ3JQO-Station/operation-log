@@ -681,7 +681,11 @@ Changes  : 2.4.8 LCR距離入力をinputmode=decimalに変更（iPhone小数点�
   <div id="pending-inline" style="display:none;margin-top:10px;">
     <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;">
       <span style="font-size:14px;color:var(--text2);">未送信：<span id="pending-count" style="color:var(--warn);font-weight:700;font-family:'Share Tech Mono',monospace;">0</span> 件</span>
-      <button onclick="sendAll()" style="background:var(--warn);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">▲ クラウドに送信</button>
+      <button id="inline-send-btn" onclick="sendAll()" style="background:var(--warn);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">▲ クラウドに送信</button>
+    </div>
+    <div id="inline-send-spinner" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;margin-top:6px;">
+      <div style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;"></div>
+      <span id="inline-send-status" style="font-size:13px;color:var(--text2);">送信中... 0 / 0 件</span>
     </div>
   </div>
 
@@ -2402,20 +2406,25 @@ async function sendAll() {
   if (pending.length === 0) return;
 
   const btn = document.getElementById('btn-send-all');
-  const inlineBtn = document.querySelector('#pending-inline button');
+  const inlineBtn = document.getElementById('inline-send-btn');
   const spinnerEl = document.getElementById('send-spinner');
+  const inlineSpinner = document.getElementById('inline-send-spinner');
+  const inlineStatus = document.getElementById('inline-send-status');
 
   // ボタンを隠してスピナー表示
   btn.style.display = 'none';
   if (inlineBtn) inlineBtn.style.display = 'none';
   if (spinnerEl) spinnerEl.style.display = 'flex';
+  if (inlineSpinner) inlineSpinner.style.display = 'flex';
 
   let successCount = 0;
   const updatedLogs = [...logs];
 
   for (let i = 0; i < pending.length; i++) {
     const log = pending[i];
-    if (spinnerEl) spinnerEl.querySelector('span').textContent = `送信中... ${i+1} / ${pending.length} 件`;
+    const statusText = `送信中... ${i+1} / ${pending.length} 件`;
+    if (spinnerEl) spinnerEl.querySelector('span').textContent = statusText;
+    if (inlineStatus) inlineStatus.textContent = statusText;
     try {
       await fetch(gasUrl, {
         method: 'POST',
@@ -2435,6 +2444,7 @@ async function sendAll() {
 
   // スピナー非表示→ボタン復活
   if (spinnerEl) spinnerEl.style.display = 'none';
+  if (inlineSpinner) inlineSpinner.style.display = 'none';
   btn.style.display = 'block';
   if (inlineBtn) inlineBtn.style.display = 'block';
 
