@@ -778,6 +778,32 @@ Changes  : 2.4.8 LCR距離入力をinputmode=decimalに変更（iPhone小数点�
     <div id="daily-text" style="font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--text);line-height:2;white-space:pre-wrap;"></div>
   </div>
 
+  <!-- CB × Es 分析 -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+      <div class="card-label" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">CB × Es 分析</div>
+      <span style="background:#d97706;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;">テスト中</span>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin:0 0 12px;">CB交信時のFxEs（4地点）を照合します。データ蓄積期間中のため参考値です。</p>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <select id="es-year" onchange="renderEsAnalysis()"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text);font-size:16px;padding:12px 10px;outline:none;
+               appearance:none;-webkit-appearance:none;font-family:'Noto Sans JP',sans-serif;
+               background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d0d0d0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E&quot;);
+               background-repeat:no-repeat;background-position:right 10px center;cursor:pointer;">
+      </select>
+      <select id="es-month" onchange="renderEsAnalysis()"
+        style="flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+               color:var(--text);font-size:16px;padding:12px 10px;outline:none;
+               appearance:none;-webkit-appearance:none;font-family:'Noto Sans JP',sans-serif;
+               background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d0d0d0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E&quot;);
+               background-repeat:no-repeat;background-position:right 10px center;cursor:pointer;">
+      </select>
+    </div>
+    <div id="es-analysis-body" style="font-size:13px;color:var(--text2);">年・月を選択してください</div>
+  </div>
+
   <!-- 全ログ一覧 -->
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;">
@@ -1475,6 +1501,7 @@ function init() {
   applyTheme(localStorage.getItem('theme_mode') || 'dark');
   updateCounter();
   checkOnline();
+  initEsAnalysis();
 }
 
 function acceptTerms() {
@@ -2889,6 +2916,130 @@ function openLogDetail(id) {
   if (dist) msg += `距離：${dist}km\n`;
   if (log.memo) msg += `メモ：${log.memo}\n`;
   alert(msg);
+}
+
+// ===== CB × Es 分析 =====
+let fxesHistory = null; // キャッシュ
+
+async function initEsAnalysis() {
+  const now = new Date();
+  const logs = getLogs();
+  const cbLogs = logs.filter(l => l.cat === 'CB');
+
+  // 年セレクト：CBログに存在する年 + 今年
+  const years = [...new Set(cbLogs.map(l => new Date(l.ts).getFullYear()))].sort((a, b) => b - a);
+  if (!years.includes(now.getFullYear())) years.unshift(now.getFullYear());
+
+  const yearSel = document.getElementById('es-year');
+  const monSel = document.getElementById('es-month');
+  if (!yearSel || !monSel) return;
+
+  yearSel.innerHTML = '<option value="">年</option>' +
+    years.map(y => `<option value="${y}"${y === now.getFullYear() ? ' selected' : ''}>${y}年</option>`).join('');
+  monSel.innerHTML = '<option value="">月</option>' +
+    [...Array(12)].map((_, i) => {
+      const m = i + 1;
+      return `<option value="${m}"${m === now.getMonth() + 1 ? ' selected' : ''}>${m}月</option>`;
+    }).join('');
+
+  // FxEs履歴を取得（1回だけ）
+  try {
+    const res = await fetch('https://jq3jqo-station.github.io/iono-monitor-web/fxes-history.json');
+    if (res.ok) fxesHistory = await res.json();
+  } catch (e) {
+    console.warn('fxes-history.json 取得失敗:', e.message);
+  }
+
+  renderEsAnalysis();
+}
+
+function renderEsAnalysis() {
+  const yearSel = document.getElementById('es-year');
+  const monSel = document.getElementById('es-month');
+  const body = document.getElementById('es-analysis-body');
+  if (!yearSel || !monSel || !body) return;
+
+  const year = parseInt(yearSel.value);
+  const month = parseInt(monSel.value);
+  if (!year || !month) { body.textContent = '年・月を選択してください'; return; }
+
+  const logs = getLogs();
+  const cbLogs = logs.filter(l => {
+    if (l.cat !== 'CB') return false;
+    const d = new Date(l.ts);
+    return d.getFullYear() === year && d.getMonth() + 1 === month;
+  }).sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+  if (cbLogs.length === 0) {
+    body.textContent = 'この月のCB交信記録はありません';
+    return;
+  }
+
+  // FxEs照合（最近傍・60分以内）
+  const normFx = (v) => {
+    if (!v || v === '--') return { text: '－', hi: false };
+    const n = parseFloat(v);
+    return isNaN(n) ? { text: '－', hi: false } : { text: v, hi: n >= 9.0 };
+  };
+
+  const findFxes = (ts) => {
+    if (!fxesHistory || fxesHistory.length === 0) return null;
+    const t = new Date(ts).getTime();
+    let best = null, bestDiff = Infinity;
+    for (const r of fxesHistory) {
+      const diff = Math.abs(new Date(r.ts).getTime() - t);
+      if (diff < bestDiff) { bestDiff = diff; best = r; }
+    }
+    return bestDiff <= 60 * 60 * 1000 ? best : null; // 60分以内
+  };
+
+  const fxCell = (v) => {
+    const f = normFx(v);
+    return f.hi
+      ? `<td style="color:#ef4444;font-weight:700;text-align:center;padding:6px 4px;">${f.text}</td>`
+      : `<td style="text-align:center;padding:6px 4px;">${f.text}</td>`;
+  };
+
+  const rows = cbLogs.map(l => {
+    const d = new Date(l.ts);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const qth = [l.pref, l.city].filter(Boolean).join(' ') || '－';
+    const fx = findFxes(l.ts);
+    const noData = '<td style="text-align:center;padding:6px 4px;color:var(--text2);">－</td>';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px 4px;white-space:nowrap;font-family:'Share Tech Mono',monospace;font-size:12px;">${dateStr}</td>
+      <td style="padding:6px 4px;font-family:'Share Tech Mono',monospace;font-weight:700;">${l.cs || '－'}</td>
+      <td style="padding:6px 4px;font-size:12px;color:var(--text2);">${qth}</td>
+      ${fx ? fxCell(fx.ok) : noData}
+      ${fx ? fxCell(fx.yg) : noData}
+      ${fx ? fxCell(fx.to) : noData}
+      ${fx ? fxCell(fx.wk) : noData}
+    </tr>`;
+  }).join('');
+
+  const noFxNote = fxesHistory === null
+    ? '<p style="font-size:11px;color:#f59e0b;margin-top:8px;">FxEsデータ読み込み中またはオフラインのため照合できません</p>'
+    : '';
+
+  body.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);color:var(--text2);">
+            <th style="padding:4px 4px;text-align:left;white-space:nowrap;">日時</th>
+            <th style="padding:4px 4px;text-align:left;">コールサイン</th>
+            <th style="padding:4px 4px;text-align:left;">運用地</th>
+            <th style="padding:4px 4px;text-align:center;font-size:11px;">沖縄</th>
+            <th style="padding:4px 4px;text-align:center;font-size:11px;">鹿児島</th>
+            <th style="padding:4px 4px;text-align:center;font-size:11px;">東京</th>
+            <th style="padding:4px 4px;text-align:center;font-size:11px;">北海道</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--text2);margin-top:8px;">FxEs 9.0以上を赤字表示 ／ データなし期間（2026/4/9以前）は－</p>
+    ${noFxNote}`;
 }
 
 init();
