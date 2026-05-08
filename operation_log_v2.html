@@ -801,7 +801,7 @@ Changes  : 2.4.8 LCR距離入力をinputmode=decimalに変更（iPhone小数点�
                background-repeat:no-repeat;background-position:right 10px center;cursor:pointer;">
       </select>
     </div>
-    <div id="es-analysis-body" style="font-size:13px;color:var(--text2);">年・月を選択してください</div>
+    <div id="es-analysis-body"></div>
   </div>
 
   <!-- 全ログ一覧 -->
@@ -2935,22 +2935,15 @@ async function initEsAnalysis() {
   if (!yearSel || !monSel) return;
 
   yearSel.innerHTML = '<option value="">年</option>' +
-    years.map(y => `<option value="${y}"${y === now.getFullYear() ? ' selected' : ''}>${y}年</option>`).join('');
+    years.map(y => `<option value="${y}">${y}年</option>`).join('');
   monSel.innerHTML = '<option value="">月</option>' +
-    [...Array(12)].map((_, i) => {
-      const m = i + 1;
-      return `<option value="${m}"${m === now.getMonth() + 1 ? ' selected' : ''}>${m}月</option>`;
-    }).join('');
+    [...Array(12)].map((_, i) => `<option value="${i+1}">${i+1}月</option>`).join('');
 
-  // FxEs履歴を取得（1回だけ）
-  try {
-    const res = await fetch('https://jq3jqo-station.github.io/iono-monitor-web/fxes-history.json');
-    if (res.ok) fxesHistory = await res.json();
-  } catch (e) {
-    console.warn('fxes-history.json 取得失敗:', e.message);
-  }
-
-  renderEsAnalysis();
+  // FxEs履歴を取得（1回だけ・バックグラウンド）
+  fetch('https://jq3jqo-station.github.io/iono-monitor-web/fxes-history.json')
+    .then(res => res.ok ? res.json() : null)
+    .then(data => { if (data) fxesHistory = data; })
+    .catch(e => console.warn('fxes-history.json 取得失敗:', e.message));
 }
 
 function renderEsAnalysis() {
@@ -2961,7 +2954,7 @@ function renderEsAnalysis() {
 
   const year = parseInt(yearSel.value);
   const month = parseInt(monSel.value);
-  if (!year || !month) { body.textContent = '年・月を選択してください'; return; }
+  if (!year || !month) { body.innerHTML = ''; return; }
 
   const logs = getLogs();
   const cbLogs = logs.filter(l => {
