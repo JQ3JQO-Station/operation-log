@@ -1556,7 +1556,7 @@ function onCallsignInput() {
 
   if (!raw) { list.classList.remove('show'); return; }
 
-  const normInput = normalizeCallsign(raw);
+  const normInput = normalizeCallsignForSearch(raw);
   const history = getHistory();
 
   const filtered = history.filter(h => {
