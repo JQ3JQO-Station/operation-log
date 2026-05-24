@@ -1560,7 +1560,7 @@ function onCallsignInput() {
   const history = getHistory();
 
   const filtered = history.filter(h => {
-    const normH = h.csNorm || h.cs;
+    const normH = normalizeCallsignForSearch(h.csNorm || h.cs);
     return normH.startsWith(normInput) || h.cs.toLowerCase().startsWith(raw.toLowerCase());
   }).slice(0, 7);
 
